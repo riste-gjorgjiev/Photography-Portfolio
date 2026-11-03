@@ -1,0 +1,39 @@
+server:
+  port: 8181
+
+spring:
+  application:
+    name: photography-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/photography_portfolio
+    username: portfolio_user
+    password: portfolio_secret
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 30MB
+
+# Custom Portfolio Properties (Override with env vars in production)
+portfolio:
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:demo}
+    api-key: ${CLOUDINARY_API_KEY:demo-key}
+    api-secret: ${CLOUDINARY_API_SECRET:demo-secret}
+  cors:
+    allowed-origins: "http://localhost:4200"

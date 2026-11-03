@@ -10,13 +10,15 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "categories")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Category {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(nullable = false, length = 100)
@@ -32,7 +34,7 @@ public class Category {
     @Column(name = "time_of_day", nullable = false, length = 10)
     private TimeOfDay timeOfDay;
 
-    @Column(name = "display_order", nullable = false)
+    @Column(name = "default_ambient_hex", nullable = false, length = 7)
     @Builder.Default
     private String defaultAmbientHex = "#1E293B";
 
