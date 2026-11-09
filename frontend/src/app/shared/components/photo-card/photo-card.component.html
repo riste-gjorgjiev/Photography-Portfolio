@@ -1,0 +1,114 @@
+<!--
+  Photo Card — Masonry-ready with EXIF & Tech HUD Overlay
+
+  FIX NOTES:
+  ─────────────────────────────────────────────────────────────────
+  The image is now `absolute inset-0` instead of `h-full`.
+
+  WHY: The parent uses `aspect-ratio` to reserve space (CLS = 0), but
+  a percentage height (`h-full` / height:100%) on a child of an
+  aspect-ratio box is unreliable and collapsed the image to height 0
+  (blank grey card). `absolute inset-0` pins the image to all four
+  edges of the parent, so it always fills the reserved box regardless
+  of how the parent's height was computed.
+
+  Also removed the `priority` + `loading="lazy"` conflict. NgOptimizedImage
+  lazy-loads by default, which is what we want for a grid.
+  ─────────────────────────────────────────────────────────────────
+-->
+<article
+  class="photo-card group relative rounded-lg overflow-hidden cursor-pointer
+         break-inside-avoid mb-6"
+  (mouseenter)="onEnter()"
+  (mouseleave)="onLeave()"
+  (click)="onClick()"
+>
+  <!-- Aspect-ratio container preserves intrinsic dimensions → CLS = 0 -->
+  <div
+    class="relative w-full bg-white/5"
+    [style.aspect-ratio]="photo().width + ' / ' + photo().height"
+  >
+    <!-- Data URI fallback (local demo uploads) -->
+    @if (isDataUri) {
+      <img
+        [src]="photo().imageUrl"
+        [alt]="photo().title || 'Portfolio photo'"
+        class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+      />
+    } @else {
+      <!-- NgOptimizedImage: generates srcset, lazy-loads by default, prevents CLS -->
+      <img
+        [ngSrc]="photo().imageUrl"
+        [width]="photo().width"
+        [height]="photo().height"
+        [alt]="photo().title || 'Portfolio photo'"
+        class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+      />
+    }
+
+    <!-- Subtle gradient overlay for text legibility -->
+    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+    <!-- Title on hover -->
+    @if (photo().title) {
+      <div class="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <h3 class="text-sm font-semibold text-white line-clamp-1">{{ photo().title }}</h3>
+        @if (photo().categoryName) {
+          <span class="text-[10px] font-mono text-white/60 uppercase tracking-wider">{{ photo().categoryName }}</span>
+        }
+      </div>
+    }
+
+    <!-- EXIF & Tech HUD Overlay -->
+    @if (showExifHud) {
+      <div class="exif-hud absolute top-2 right-2 flex flex-col items-end gap-1.5">
+        <!-- Camera telemetry -->
+        <div class="flex flex-wrap justify-end gap-1">
+          @if (photo().exif.aperture) {
+            <span class="exif-badge">{{ photo().exif.aperture }}</span>
+          }
+          @if (photo().exif.shutterSpeed) {
+            <span class="exif-badge">{{ photo().exif.shutterSpeed }}</span>
+          }
+          @if (photo().exif.iso) {
+            <span class="exif-badge">ISO {{ photo().exif.iso }}</span>
+          }
+          @if (photo().exif.focalLength) {
+            <span class="exif-badge">{{ photo().exif.focalLength }}</span>
+          }
+        </div>
+
+        <!-- Camera + Lens -->
+        @if (photo().exif.cameraModel || photo().exif.lensModel) {
+          <div class="text-[9px] font-mono text-white/50 text-right max-w-[200px] truncate">
+            @if (photo().exif.cameraModel) {
+              <span>{{ photo().exif.cameraModel }}</span>
+            }
+            @if (photo().exif.lensModel) {
+              <span> · {{ photo().exif.lensModel }}</span>
+            }
+          </div>
+        }
+
+        <!-- Intrinsic dimensions -->
+        <div class="text-[9px] font-mono text-white/40">
+          {{ photo().width }} × {{ photo().height }}px
+        </div>
+
+        <!-- Dominant color swatches -->
+        <div class="flex items-center gap-1.5">
+          <div
+            class="w-4 h-4 rounded-full border border-white/30"
+            [style.background]="photo().dominantHexPrimary"
+            [title]="photo().dominantHexPrimary"
+          ></div>
+          <div
+            class="w-4 h-4 rounded-full border border-white/30"
+            [style.background]="photo().dominantHexSecondary"
+            [title]="photo().dominantHexSecondary"
+          ></div>
+        </div>
+      </div>
+    }
+  </div>
+</article>

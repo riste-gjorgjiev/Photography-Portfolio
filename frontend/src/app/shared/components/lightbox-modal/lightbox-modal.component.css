@@ -1,0 +1,11 @@
+.exif-field {
+  @apply flex flex-col gap-0.5 px-3 py-2 rounded-lg bg-white/5 border border-white/5;
+}
+
+.exif-label {
+  @apply text-[9px] font-mono uppercase tracking-[0.15em] text-white/40;
+}
+
+.exif-value {
+  @apply text-xs font-mono text-white/80;
+}

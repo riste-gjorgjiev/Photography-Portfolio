@@ -62,6 +62,10 @@ export class AtmosphereService {
 
   setActiveCategory(slug: string | null, ambientHex?: string): void {
     this._activeCategorySlug.set(slug);
+    // FIX: Changing category must clear any active album filter.
+    // Otherwise photos stay filtered by an album belonging to the old
+    // category, which makes the grid appear "stuck" or empty.
+    this._activeAlbumSlug.set(null);
     if (ambientHex){
       this._ambientPrimaryHex.set(ambientHex);
     }
@@ -85,6 +89,11 @@ export class AtmosphereService {
 
   setExifHudEnabled(enabled: boolean): void {
     this._exifHudEnabled.set(enabled);
+  }
+
+  setAmbientColors(primary: string, secondary: string): void {
+    this._ambientPrimaryHex.set(primary);
+    this._ambientSecondaryHex.set(secondary);
   }
 
   private applyCssVariables(): void {
