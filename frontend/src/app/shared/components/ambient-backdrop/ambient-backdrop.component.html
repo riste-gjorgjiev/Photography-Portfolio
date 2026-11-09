@@ -1,0 +1,22 @@
+<!--
+  Fixed backdrop with two radial gradients.
+  GPU-accelerated: filter: blur(120px), transform: translateZ(0).
+  Opacity capped at 0.22 per blueprint §2.2.
+-->
+<div
+  class="fixed inset-0 -z-10 pointer-events-none"
+  style="transform: translateZ(0); will-change: background;"
+>
+  <div
+    class="absolute inset-0"
+    [style.background]="
+      'radial-gradient(ellipse 60% 50% at 20% 30%, ' +
+      ambientPrimaryHex() +
+      ' 0%, transparent 70%), ' +
+      'radial-gradient(ellipse 50% 40% at 80% 70%, ' +
+      ambientSecondaryHex() +
+      ' 0%, transparent 70%)'
+    "
+    style="filter: blur(120px); opacity: 0.22; transition: background 0.6s cubic-bezier(0.22, 1, 0.36, 1);"
+  ></div>
+</div>

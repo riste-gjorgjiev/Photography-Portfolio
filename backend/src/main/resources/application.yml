@@ -29,6 +29,16 @@ spring:
       max-file-size: 25MB
       max-request-size: 30MB
 
+# Actuator health endpoint configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: when-authorized
+
 # Custom Portfolio Properties (Override with env vars in production)
 portfolio:
   cloudinary:
