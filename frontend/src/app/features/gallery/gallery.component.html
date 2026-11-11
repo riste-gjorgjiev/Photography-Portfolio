@@ -68,14 +68,32 @@
       <p class="font-mono text-sm">No photos match the current filters</p>
     </div>
   } @else {
-    <div class="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
-      @for (photo of filteredPhotos(); track photo.id) {
-        <app-photo-card
-          [photo]="photo"
-          (photoSelected)="openLightbox($event)"
-        />
-      }
-    </div>
+    @if (filteredPhotos().length <= 3) {
+      <!--
+        Small result sets (e.g. an album with 2 photos): use a real CSS grid so
+        the cards sit side-by-side across the row instead of stacking all in the
+        first column (which is what `columns-3` does when there are fewer items
+        than columns).
+      -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+        @for (photo of filteredPhotos(); track photo.id) {
+          <app-photo-card
+            [photo]="photo"
+            (photoSelected)="openLightbox($event)"
+          />
+        }
+      </div>
+    } @else {
+      <!-- Masonry: items flow top-to-bottom through 1/2/3 balanced columns -->
+      <div class="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
+        @for (photo of filteredPhotos(); track photo.id) {
+          <app-photo-card
+            [photo]="photo"
+            (photoSelected)="openLightbox($event)"
+          />
+        }
+      </div>
+    }
   }
 </section>
 

@@ -4,6 +4,12 @@ import { GalleryComponent } from './features/gallery/gallery.component';
 export const routes: Routes = [
   {
     path: '',
+    loadComponent: () =>
+      import('./features/home/home.component').then((m) => m.HomeComponent),
+    title: 'Photography Portfolio — Drawing With Light',
+  },
+  {
+    path: 'explore',
     component: GalleryComponent,
     title: 'Photography Portfolio — Gallery',
   },
