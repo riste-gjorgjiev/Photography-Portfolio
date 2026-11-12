@@ -8,11 +8,12 @@ import {
   CATEGORY_TO_EVENT_TYPE,
   EVENT_TYPES,
 } from '../../core/models/portfolio.models';
+import { UiIconComponent } from '../../shared/components/ui-icon/ui-icon.component';
 
 @Component({
   selector: 'app-booking',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, UiIconComponent],
   templateUrl: './booking.component.html',
   styleUrl: './booking.component.css',
 })

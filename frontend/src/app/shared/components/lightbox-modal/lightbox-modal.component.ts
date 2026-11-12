@@ -12,11 +12,12 @@ import { NgOptimizedImage, DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { PhotoResponse } from '../../../core/models/portfolio.models';
 import { AtmosphereService } from '../../../core/services/atmosphere.service';
+import { UiIconComponent } from '../ui-icon/ui-icon.component';
 
 @Component({
   selector: 'app-lightbox-modal',
   standalone: true,
-  imports: [NgOptimizedImage, DatePipe],
+  imports: [NgOptimizedImage, DatePipe, UiIconComponent],
   templateUrl: './lightbox-modal.component.html',
   styleUrl: './lightbox-modal.component.css',
 })

@@ -19,13 +19,14 @@ import {
   PhotoUploadRequest,
   TimeOfDay,
 } from '../../core/models/portfolio.models';
+import { UiIconComponent } from '../../shared/components/ui-icon/ui-icon.component';
 
 type AdminTab = 'photos' | 'albums' | 'bookings';
 
 @Component({
   selector: 'app-admin-cms',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, UiIconComponent],
   templateUrl: './admin-cms.component.html',
   styleUrl: './admin-cms.component.css',
 })

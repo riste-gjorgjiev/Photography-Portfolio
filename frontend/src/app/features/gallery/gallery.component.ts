@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { EventAlbumCardComponent } from './event-album-card.component';
 import { LightboxModalComponent } from '../../shared/components/lightbox-modal/lightbox-modal.component';
 import { PhotoCardComponent } from '../../shared/components/photo-card/photo-card.component';
+import { UiIconComponent } from '../../shared/components/ui-icon/ui-icon.component';
 import { PortfolioApiService } from '../../core/services/portfolio-api.service';
 import { AtmosphereService } from '../../core/services/atmosphere.service';
 import { CategoryResponse, EventAlbumResponse, PhotoResponse } from '../../core/models/portfolio.models';
@@ -13,6 +14,7 @@ import { CategoryResponse, EventAlbumResponse, PhotoResponse } from '../../core/
     EventAlbumCardComponent,
     PhotoCardComponent,
     LightboxModalComponent,
+    UiIconComponent,
   ],
   templateUrl: './gallery.component.html',
   styleUrl: './gallery.component.css',

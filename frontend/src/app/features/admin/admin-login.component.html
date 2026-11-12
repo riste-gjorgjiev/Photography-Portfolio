@@ -4,7 +4,7 @@
       <div class="font-mono text-[10px] tracking-[0.3em] text-white/40 uppercase mb-2">
         Restricted Access
       </div>
-      <h1 class="text-2xl font-light text-white/90 tracking-tight">Admin Studio</h1>
+      <h1 class="text-2xl font-display font-light text-white/90 tracking-tight">Admin Studio</h1>
       <p class="mt-2 text-sm text-white/50">Enter your credentials to continue</p>
     </div>
 
@@ -46,7 +46,7 @@
       <button
         (click)="onLogin()"
         [disabled]="!auth.isAuthenticated() || loggingIn()"
-        class="w-full px-6 py-3 rounded-lg text-sm font-semibold
+        class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold
                bg-gradient-to-r from-purple-600 to-blue-600 text-white
                transition-all duration-300
                disabled:opacity-40 disabled:cursor-not-allowed
@@ -58,7 +58,8 @@
             Verifying...
           </span>
         } @else {
-          Sign In →
+          Sign In
+          <app-icon name="arrow-right" [size]="16" />
         }
       </button>
     </div>

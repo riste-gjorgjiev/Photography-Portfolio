@@ -3,7 +3,7 @@
     <div class="font-mono text-[10px] tracking-[0.3em] text-white/40 uppercase mb-2">
       Inquiry Pipeline
     </div>
-    <h1 class="text-3xl sm:text-4xl font-light text-white/90 tracking-tight mb-3">
+    <h1 class="text-3xl sm:text-4xl font-display font-light text-white/90 tracking-tight mb-3">
       Book Me for an Event
     </h1>
     <p class="text-sm text-white/50 max-w-xl leading-relaxed">
@@ -14,8 +14,8 @@
 
   @if (submitted(); as resp) {
     <div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-sm p-8 text-center">
-      <div class="text-5xl mb-4">✓</div>
-      <h2 class="text-2xl font-light text-emerald-300 mb-2">Inquiry Received</h2>
+      <app-icon name="check" [size]="48" class="mb-4 text-emerald-400" />
+      <h2 class="text-2xl font-display font-light text-emerald-300 mb-2">Inquiry Received</h2>
       <p class="text-sm text-white/50 mb-6">
         Your booking request has been submitted. Status:
         <span class="font-mono text-emerald-400">{{ resp.status }}</span>
@@ -62,7 +62,7 @@
   } @else {
     @if (serverError(); as msg) {
       <div class="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 flex items-start gap-3">
-        <span class="text-red-400 text-lg leading-none mt-0.5">⚠</span>
+        <app-icon name="triangle-alert" [size]="18" class="text-red-400 mt-0.5" />
         <p class="text-sm text-red-300">{{ msg }}</p>
       </div>
     }
@@ -319,7 +319,7 @@
           [class]="form.invalid || submitting()
             ? 'opacity-40 cursor-not-allowed'
             : 'hover:shadow-lg hover:shadow-purple-500/20'"
-          class="px-8 py-3 rounded-lg text-sm font-semibold
+          class="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-semibold
                  bg-gradient-to-r from-purple-600 to-blue-600
                  text-white transition-all duration-300"
         >
@@ -329,7 +329,8 @@
               Transmitting...
             </span>
           } @else {
-            Send Inquiry →
+            Send Inquiry
+            <app-icon name="arrow-right" [size]="16" />
           }
         </button>
 

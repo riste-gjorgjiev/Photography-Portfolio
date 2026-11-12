@@ -19,6 +19,7 @@ import {
 import { PhotoCardComponent } from '../../shared/components/photo-card/photo-card.component';
 import { LightboxModalComponent } from '../../shared/components/lightbox-modal/lightbox-modal.component';
 import { EventAlbumCardComponent } from '../gallery/event-album-card.component';
+import { UiIconComponent } from '../../shared/components/ui-icon/ui-icon.component';
 
 const FALLBACK_HERO =
   'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=3200&q=85';
@@ -38,6 +39,7 @@ type HeroMode = 'pan' | 'letterbox';
     PhotoCardComponent,
     LightboxModalComponent,
     EventAlbumCardComponent,
+    UiIconComponent,
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',

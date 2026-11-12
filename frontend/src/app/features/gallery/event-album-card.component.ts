@@ -1,11 +1,12 @@
 import {Component, input, output} from '@angular/core';
 import {DatePipe, NgOptimizedImage} from '@angular/common';
 import {EventAlbumResponse} from '../../core/models/portfolio.models';
+import {UiIconComponent} from '../../shared/components/ui-icon/ui-icon.component';
 
 @Component({
   selector: 'app-event-album-card',
   standalone: true,
-  imports: [NgOptimizedImage, DatePipe],
+  imports: [NgOptimizedImage, DatePipe, UiIconComponent],
   template: `
     <article
       class="group relative flex-shrink-0 w-72 sm:w-80 rounded-xl overflow-hidden cursor-pointer
@@ -47,8 +48,9 @@ import {EventAlbumResponse} from '../../core/models/portfolio.models';
 
         <!-- Featured Badge -->
         @if (album().featured) {
-          <div class="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider bg-amber-500/80 text-white">
-            ★ Featured
+          <div class="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider bg-amber-500/80 text-white">
+            <app-icon name="star" [size]="12" />
+            Featured
           </div>
         }
       </div>

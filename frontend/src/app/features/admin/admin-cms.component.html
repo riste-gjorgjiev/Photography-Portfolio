@@ -5,7 +5,7 @@
       <div class="font-mono text-[10px] tracking-[0.3em] text-white/40 uppercase mb-1">
         Mini-CMS Studio
       </div>
-      <h1 class="text-2xl font-light text-white/90 tracking-tight">Admin Dashboard</h1>
+      <h1 class="text-2xl font-display font-light text-white/90 tracking-tight">Admin Dashboard</h1>
     </div>
 
     <!-- Auth Status -->
@@ -81,14 +81,15 @@
               <button
                 type="button"
                 (click)="clearSelectedFile()"
-                class="text-[10px] font-mono text-red-400/60 hover:text-red-400 transition-colors"
+                class="inline-flex items-center gap-1 text-[10px] font-mono text-red-400/60 hover:text-red-400 transition-colors"
               >
-                ✕ Remove
+                <app-icon name="x" [size]="12" />
+                Remove
               </button>
             </div>
           } @else {
             <div class="space-y-2">
-              <div class="text-3xl text-white/20">⬆</div>
+              <app-icon name="upload" [size]="32" class="text-white/20" />
               <p class="text-sm text-white/40">Drag &amp; drop an image here</p>
               <label class="inline-block px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-xs font-mono text-white/60 cursor-pointer hover:bg-white/15 transition-colors">
                 Browse Files
@@ -215,7 +216,10 @@
                 Analyzing EXIF &amp; Uploading...
               </span>
             } @else {
-              Upload &amp; Analyze →
+              <span class="inline-flex items-center justify-center gap-2">
+                Upload &amp; Analyze
+                <app-icon name="arrow-right" [size]="16" />
+              </span>
             }
           </button>
         </form>
@@ -226,7 +230,7 @@
         @if (lastUploadedPhoto(); as photo) {
           <div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6 space-y-4">
             <div class="flex items-center gap-2">
-              <span class="text-emerald-400">✓</span>
+              <app-icon name="check" [size]="16" class="text-emerald-400" />
               <h3 class="text-sm font-mono text-emerald-300 tracking-wider">Server Analysis Complete</h3>
             </div>
 
@@ -339,7 +343,7 @@
                     class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white/70 text-xs flex items-center justify-center transition-colors"
                     title="Preview ambient colors"
                   >
-                    🎨
+                    <app-icon name="palette" [size]="14" />
                   </button>
                   <button
                     type="button"
@@ -347,7 +351,7 @@
                     class="w-7 h-7 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 text-xs flex items-center justify-center transition-colors"
                     title="Delete photo"
                   >
-                    ✕
+                    <app-icon name="x" [size]="14" />
                   </button>
                 </div>
               </div>
@@ -367,7 +371,7 @@
           class="bg-[#111116] border border-white/10 rounded-2xl p-6 max-w-sm mx-4 space-y-4"
           (click)="$event.stopPropagation()"
         >
-          <h3 class="text-lg font-light text-white/90">Delete Photo?</h3>
+          <h3 class="text-lg font-display font-light text-white/90">Delete Photo?</h3>
           <p class="text-sm text-white/50">
             This will remove the photo from Cloudinary and PostgreSQL. This action cannot be undone.
           </p>
@@ -535,7 +539,10 @@
                 Creating...
               </span>
             } @else {
-              Create Event Album →
+              <span class="inline-flex items-center justify-center gap-2">
+                Create Event Album
+                <app-icon name="arrow-right" [size]="16" />
+              </span>
             }
           </button>
         </form>
@@ -556,7 +563,9 @@
                 </div>
                 <div class="flex items-center gap-2">
                   @if (album.featured) {
-                    <span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-yellow-500/20 text-yellow-300">★</span>
+                    <span class="px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 inline-flex items-center">
+                      <app-icon name="star" [size]="10" />
+                    </span>
                   }
                   <div class="w-4 h-4 rounded" [style.background]="album.dominantHex"></div>
                 </div>

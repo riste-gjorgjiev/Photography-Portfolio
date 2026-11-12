@@ -1,7 +1,7 @@
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
   <div class="flex items-end justify-between">
     <div>
-      <h1 class="text-3xl sm:text-4xl font-light text-white/90 tracking-tight">
+      <h1 class="text-3xl sm:text-4xl font-display font-light text-white/90 tracking-tight">
         @switch (atmosphere.lightingMode()) {
           @case ('NIGHT') { <span class="text-purple-400">By Night</span> }
           @case ('DAY') { <span class="text-amber-400">By Day</span> }
@@ -52,10 +52,11 @@
       </div>
       <button
         (click)="clearAlbumFilter()"
-        class="px-3 py-1 rounded-md text-xs font-mono text-white/60 hover:text-white
+        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono text-white/60 hover:text-white
                bg-white/10 hover:bg-white/20 transition-colors"
       >
-        ✕ Clear Album Filter / View All
+        <app-icon name="x" [size]="14" />
+        Clear Album Filter / View All
       </button>
     </div>
   </section>
@@ -64,7 +65,7 @@
 <section id="photo-grid" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
   @if (filteredPhotos().length === 0) {
     <div class="flex flex-col items-center justify-center py-24 text-white/30">
-      <span class="text-5xl mb-4">📷</span>
+      <app-icon name="camera" [size]="48" [strokeWidth]="1.25" class="mb-4" />
       <p class="font-mono text-sm">No photos match the current filters</p>
     </div>
   } @else {

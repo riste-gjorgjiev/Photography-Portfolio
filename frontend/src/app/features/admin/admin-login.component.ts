@@ -2,10 +2,12 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { PortfolioApiService } from '../../core/services/portfolio-api.service';
+import { UiIconComponent } from '../../shared/components/ui-icon/ui-icon.component';
 
 @Component({
   selector: 'app-admin-login',
   standalone: true,
+  imports: [UiIconComponent],
   templateUrl: './admin-login.component.html',
   styleUrl: './admin-login.component.css',
 })
