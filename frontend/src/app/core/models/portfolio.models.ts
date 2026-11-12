@@ -112,3 +112,31 @@ export interface CreateEventAlbumRequest {
   dominantHex: string | null;
   featured: boolean;
 }
+
+export const EVENT_TYPES = [
+  { value: 'NIGHTCLUB', label: 'Nightclub / Rave Coverage', ambientHex: '#FF007F' },
+  { value: 'FESTIVAL', label: 'Festival / Multi-Stage', ambientHex: '#7928CA' },
+  { value: 'EVENING_EVENT', label: 'Corporate / Evening Event', ambientHex: '#00E5FF' },
+  { value: 'WILDLIFE_PRINT', label: 'Wildlife / Fine Art Print', ambientHex: '#2D5A27' },
+  { value: 'PRIVATE_SHOOT', label: 'Private / Editorial Shoot', ambientHex: '#D4A373' },
+  { value: 'OTHER', label: 'Other / Custom', ambientHex: '#6B7280' },
+] as const;
+
+export type EventTypeValue = (typeof EVENT_TYPES)[number]['value'];
+
+export const BUDGET_RANGES = [
+  '< €300',
+  '€300 – €600',
+  '€600 – €1,200',
+  '€1,200+ / Custom',
+] as const;
+
+
+export const CATEGORY_TO_EVENT_TYPE: Record<string, string> = {
+  'nightclubs-raves': 'NIGHTCLUB',
+  'astrophotography': 'PRIVATE_SHOOT',
+  'evening-events': 'EVENING_EVENT',
+  'wildlife': 'WILDLIFE_PRINT',
+  'nature-landscapes': 'WILDLIFE_PRINT',
+  'daytime-events': 'FESTIVAL',
+};

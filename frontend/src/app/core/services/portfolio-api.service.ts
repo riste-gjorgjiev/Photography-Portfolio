@@ -1,5 +1,5 @@
 import {inject, Injectable} from '@angular/core';
-import {HttpClient, HttpParams} from '@angular/common/http';
+import {HttpClient, HttpHeaders, HttpParams} from '@angular/common/http';
 import {
   BookingInquiryRequest, BookingInquiryResponse, BookingStatus,
   CategoryResponse, CreateEventAlbumRequest,
@@ -8,10 +8,12 @@ import {
   TimeOfDay
 } from '../models/portfolio.models';
 import {Observable} from 'rxjs';
+import {AuthService} from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class PortfolioApiService {
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
   private readonly baseUrl = 'http://localhost:8080/api/v1';
 
   getCategories(timeOfDay?: TimeOfDay): Observable<CategoryResponse[]> {
@@ -47,6 +49,10 @@ export class PortfolioApiService {
 
   //ADMIN ENDPOINTS
 
+  private get adminHeaders(): HttpHeaders {
+    return new HttpHeaders({ Authorization: this.auth.authHeader() });
+  }
+
   uploadPhoto(file: File, metadata: PhotoUploadRequest): Observable<PhotoResponse> {
     const formData = new FormData();
     formData.append('file', file, file.name);
@@ -54,19 +60,23 @@ export class PortfolioApiService {
       'request',
       new Blob([JSON.stringify(metadata)], { type: 'application/json' }),
     );
-    return this.http.post<PhotoResponse>(`${this.baseUrl}/admin/photos`, formData);
+    return this.http.post<PhotoResponse>(`${this.baseUrl}/admin/photos`, formData, {
+      headers: this.adminHeaders,
+    });
   }
 
   createAlbum(request: CreateEventAlbumRequest): Observable<EventAlbumResponse> {
     return this.http.post<EventAlbumResponse>(
       `${this.baseUrl}/admin/albums`,
       request,
+      { headers: this.adminHeaders },
     );
   }
 
   deletePhoto(id: string): Observable<void> {
     return this.http.delete<void>(
       `${this.baseUrl}/admin/photos/${encodeURIComponent(id)}`,
+      { headers: this.adminHeaders },
     );
   }
 
@@ -74,16 +84,16 @@ export class PortfolioApiService {
     const params = this.buildParams({ status });
     return this.http.get<BookingInquiryResponse[]>(
       `${this.baseUrl}/admin/bookings`,
-      { params },
+      { params, headers: this.adminHeaders },
     );
   }
 
   updateBookingStatus(id: string, status: BookingStatus): Observable<BookingInquiryResponse> {
     const params = new HttpParams().set('status', status);
     return this.http.patch<BookingInquiryResponse>(
-      `${this.baseUrl}/admin/bookings${encodeURIComponent(id)}/status`,
+      `${this.baseUrl}/admin/bookings/${encodeURIComponent(id)}/status`,
       null,
-      { params },
+      { params, headers: this.adminHeaders },
     );
   }
 

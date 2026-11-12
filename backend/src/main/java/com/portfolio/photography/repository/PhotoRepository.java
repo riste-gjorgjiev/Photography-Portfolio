@@ -19,7 +19,7 @@ public interface PhotoRepository extends JpaRepository<Photo, UUID> {
             WHERE (:timeOfDay IS NULL OR p.timeOfDay = :timeOfDay)
             AND (:categorySlug IS NULL OR c.slug = :categorySlug)
             AND (:albumSlug IS NULL OR a.slug = :albumSlug)
-            AND (:featuredOnly IS NULL OR p.featured = true)
+            AND (:featuredOnly = false OR p.featured = true)
             ORDER BY p.displayOrder ASC, p.createdAt DESC
             """)
     List<Photo> findFilteredPhotos(

@@ -1,0 +1,66 @@
+<section class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <div class="font-mono text-[10px] tracking-[0.3em] text-white/40 uppercase mb-2">
+        Restricted Access
+      </div>
+      <h1 class="text-2xl font-light text-white/90 tracking-tight">Admin Studio</h1>
+      <p class="mt-2 text-sm text-white/50">Enter your credentials to continue</p>
+    </div>
+
+    <div class="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-8 space-y-6">
+      <div>
+        <label class="block text-xs font-mono text-white/50 mb-1.5">Username</label>
+        <input
+          [value]="auth.username()"
+          (input)="auth.setUsername($any($event.target).value)"
+          type="text"
+          autocomplete="username"
+          (keydown.enter)="onLogin()"
+          class="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10
+                 text-sm text-white/90 placeholder:text-white/20
+                 focus:border-purple-500/50 focus:outline-none transition-colors"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-mono text-white/50 mb-1.5">Password</label>
+        <input
+          [value]="auth.password()"
+          (input)="auth.setPassword($any($event.target).value)"
+          type="password"
+          autocomplete="current-password"
+          (keydown.enter)="onLogin()"
+          class="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10
+                 text-sm text-white/90 placeholder:text-white/20
+                 focus:border-purple-500/50 focus:outline-none transition-colors"
+        />
+      </div>
+
+      @if (loginError(); as err) {
+        <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+          {{ err }}
+        </div>
+      }
+
+      <button
+        (click)="onLogin()"
+        [disabled]="!auth.isAuthenticated() || loggingIn()"
+        class="w-full px-6 py-3 rounded-lg text-sm font-semibold
+               bg-gradient-to-r from-purple-600 to-blue-600 text-white
+               transition-all duration-300
+               disabled:opacity-40 disabled:cursor-not-allowed
+               hover:shadow-lg hover:shadow-purple-500/20"
+      >
+        @if (loggingIn()) {
+          <span class="flex items-center justify-center gap-2">
+            <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            Verifying...
+          </span>
+        } @else {
+          Sign In →
+        }
+      </button>
+    </div>
+  </div>
+</section>

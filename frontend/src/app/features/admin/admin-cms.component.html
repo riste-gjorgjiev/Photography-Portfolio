@@ -1,0 +1,721 @@
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- ─── TOP BAR ──────────────────────────────────────────────────── -->
+  <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+    <div>
+      <div class="font-mono text-[10px] tracking-[0.3em] text-white/40 uppercase mb-1">
+        Mini-CMS Studio
+      </div>
+      <h1 class="text-2xl font-light text-white/90 tracking-tight">Admin Dashboard</h1>
+    </div>
+
+    <!-- Auth Status -->
+    <div class="flex items-center gap-3 px-4 py-2 rounded-lg bg-white/5 border border-white/10">
+      <div class="w-2.5 h-2.5 rounded-full bg-emerald-400" title="Authenticated"></div>
+      <span class="text-xs font-mono text-white/50">Signed in as</span>
+      <span class="text-xs font-mono text-white/80">{{ auth.username() }}</span>
+      <button
+        (click)="signOut()"
+        class="ml-2 px-2 py-1 rounded text-[10px] font-mono text-white/40 hover:text-red-400
+               bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30
+               transition-colors"
+        title="Sign out"
+      >
+        Sign Out
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── TAB SWITCHER ─────────────────────────────────────────────── -->
+  <div class="flex gap-1 mb-8 p-1 rounded-lg bg-white/5 border border-white/10 w-fit">
+    <button
+      type="button"
+      (click)="activeTab.set('photos')"
+      class="px-4 py-2 rounded-md text-xs font-mono tracking-wider transition-colors"
+      [class]="activeTab() === 'photos' ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white/80'"
+    >
+      Photo Uploader
+    </button>
+
+    <button
+      type="button"
+      (click)="activeTab.set('albums')"
+      class="px-4 py-2 rounded-md text-xs font-mono tracking-wider transition-colors"
+      [class]="activeTab() === 'albums' ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white/80'"
+    >
+      Album Creator
+    </button>
+
+    <button
+      type="button"
+      (click)="activeTab.set('bookings')"
+      class="px-4 py-2 rounded-md text-xs font-mono tracking-wider transition-colors"
+      [class]="activeTab() === 'bookings' ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white/80'"
+    >
+      Bookings Inbox
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TAB 1: PHOTO UPLOADER & EXIF LAB                                -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'photos') {
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <!-- Upload Form -->
+      <div class="space-y-6">
+        <!-- Dropzone -->
+        <div
+          (dragover)="$event.preventDefault()"
+          (drop)="onFileDrop($event)"
+          class="relative rounded-2xl border-2 border-dashed border-white/15 bg-white/[0.02] p-8 text-center transition-colors hover:border-white/25 hover:bg-white/[0.04]"
+        >
+          @if (localPreviewUrl(); as preview) {
+            <div class="space-y-3">
+              <img [src]="preview" alt="Preview" class="max-h-48 mx-auto rounded-lg shadow-lg" />
+              <div class="flex items-center justify-center gap-2">
+                <span class="text-xs font-mono text-white/60">{{ selectedFile()?.name }}</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-white/10 text-white/50">
+                  {{ fileSizeMB() }} MB
+                </span>
+              </div>
+              <button
+                type="button"
+                (click)="clearSelectedFile()"
+                class="text-[10px] font-mono text-red-400/60 hover:text-red-400 transition-colors"
+              >
+                ✕ Remove
+              </button>
+            </div>
+          } @else {
+            <div class="space-y-2">
+              <div class="text-3xl text-white/20">⬆</div>
+              <p class="text-sm text-white/40">Drag &amp; drop an image here</p>
+              <label class="inline-block px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-xs font-mono text-white/60 cursor-pointer hover:bg-white/15 transition-colors">
+                Browse Files
+                <input type="file" accept="image/*" class="hidden" (change)="onFileInput($event)" />
+              </label>
+            </div>
+          }
+        </div>
+
+        <!-- Metadata Form -->
+        <form [formGroup]="photoForm" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-mono text-white/40 mb-1">Title</label>
+              <input
+                formControlName="title"
+                type="text"
+                placeholder="Photo title"
+                class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-white/40 mb-1">Category *</label>
+              <select
+                formControlName="categoryId"
+                class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 focus:border-purple-500/50 focus:outline-none transition-colors"
+              >
+                <option value="" disabled>Select category...</option>
+                <optgroup label="NIGHT">
+                  @for (cat of nightCategories(); track cat.id) {
+                    <option [value]="cat.id">{{ cat.name }}</option>
+                  }
+                </optgroup>
+                <optgroup label="DAY">
+                  @for (cat of dayCategories(); track cat.id) {
+                    <option [value]="cat.id">{{ cat.name }}</option>
+                  }
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-mono text-white/40 mb-1">Caption</label>
+            <textarea
+              formControlName="caption"
+              rows="2"
+              placeholder="Story or context..."
+              class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors resize-y"
+            ></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-mono text-white/40 mb-1.5">Time of Day</label>
+              <div class="flex gap-2">
+                @for (tod of ['NIGHT', 'DAY']; track tod) {
+                  <button
+                    type="button"
+                    (click)="photoForm.controls.timeOfDayOverride.setValue($any(tod))"
+                    class="flex-1 px-3 py-1.5 rounded-lg text-xs font-mono border transition-colors"
+                    [class]="photoForm.controls.timeOfDayOverride.value === tod
+                      ? 'bg-white/15 border-white/30 text-white'
+                      : 'bg-white/5 border-white/10 text-white/50 hover:text-white/70'"
+                  >
+                    {{ tod }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-mono text-white/40 mb-1">Event Album</label>
+              <select
+                formControlName="eventAlbumId"
+                class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 focus:border-purple-500/50 focus:outline-none transition-colors"
+              >
+                <option [ngValue]="null">None (standalone photo)</option>
+                @for (album of albums(); track album.id) {
+                  <option [value]="album.id">{{ album.title }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-6">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                formControlName="featured"
+                class="w-4 h-4 rounded border-white/20 bg-white/5 text-purple-500 focus:ring-purple-500/25 focus:ring-offset-0"
+              />
+              <span class="text-xs font-mono text-white/60">Featured</span>
+            </label>
+            <div class="flex items-center gap-2">
+              <label class="text-[10px] font-mono text-white/40">Order</label>
+              <input
+                formControlName="displayOrder"
+                type="number"
+                min="0"
+                class="w-16 px-2 py-1 rounded bg-white/5 border border-white/10 text-xs font-mono text-white/80 focus:border-purple-500/50 focus:outline-none transition-colors"
+              />
+            </div>
+          </div>
+
+          @if (uploadError(); as err) {
+            <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+              {{ err }}
+            </div>
+          }
+
+          <button
+            type="button"
+            (click)="uploadPhoto()"
+            [disabled]="!selectedFile() || photoForm.invalid || uploading()"
+            class="w-full px-6 py-3 rounded-lg text-sm font-semibold bg-gradient-to-r from-purple-600 to-blue-600 text-white transition-all duration-300"
+            [class]="!selectedFile() || photoForm.invalid || uploading()
+              ? 'opacity-40 cursor-not-allowed'
+              : 'hover:shadow-lg hover:shadow-purple-500/20'"
+          >
+            @if (uploading()) {
+              <span class="flex items-center justify-center gap-2">
+                <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                Analyzing EXIF &amp; Uploading...
+              </span>
+            } @else {
+              Upload &amp; Analyze →
+            }
+          </button>
+        </form>
+      </div>
+
+      <!-- Server Analysis Result Card -->
+      <div class="space-y-6">
+        @if (lastUploadedPhoto(); as photo) {
+          <div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6 space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="text-emerald-400">✓</span>
+              <h3 class="text-sm font-mono text-emerald-300 tracking-wider">Server Analysis Complete</h3>
+            </div>
+
+            <img
+              [src]="photo.imageUrl"
+              [alt]="photo.title || 'Uploaded photo'"
+              class="w-full max-h-48 object-cover rounded-lg"
+            />
+
+            <!-- EXIF Telemetry -->
+            <div class="grid grid-cols-2 gap-2">
+              @if (photo.exif.cameraModel) {
+                <div class="px-2 py-1.5 rounded bg-white/5">
+                  <div class="text-[9px] font-mono text-white/30 uppercase">Camera</div>
+                  <div class="text-xs font-mono text-white/80">{{ photo.exif.cameraModel }}</div>
+                </div>
+              }
+              @if (photo.exif.lensModel) {
+                <div class="px-2 py-1.5 rounded bg-white/5">
+                  <div class="text-[9px] font-mono text-white/30 uppercase">Lens</div>
+                  <div class="text-xs font-mono text-white/80">{{ photo.exif.lensModel }}</div>
+                </div>
+              }
+              @if (photo.exif.focalLength) {
+                <div class="px-2 py-1.5 rounded bg-white/5">
+                  <div class="text-[9px] font-mono text-white/30 uppercase">Focal</div>
+                  <div class="text-xs font-mono text-white/80">{{ photo.exif.focalLength }}</div>
+                </div>
+              }
+              @if (photo.exif.aperture) {
+                <div class="px-2 py-1.5 rounded bg-white/5">
+                  <div class="text-[9px] font-mono text-white/30 uppercase">Aperture</div>
+                  <div class="text-xs font-mono text-white/80">{{ photo.exif.aperture }}</div>
+                </div>
+              }
+              @if (photo.exif.shutterSpeed) {
+                <div class="px-2 py-1.5 rounded bg-white/5">
+                  <div class="text-[9px] font-mono text-white/30 uppercase">Shutter</div>
+                  <div class="text-xs font-mono text-white/80">{{ photo.exif.shutterSpeed }}</div>
+                </div>
+              }
+              @if (photo.exif.iso) {
+                <div class="px-2 py-1.5 rounded bg-white/5">
+                  <div class="text-[9px] font-mono text-white/30 uppercase">ISO</div>
+                  <div class="text-xs font-mono text-white/80">{{ photo.exif.iso }}</div>
+                </div>
+              }
+              <div class="px-2 py-1.5 rounded bg-white/5">
+                <div class="text-[9px] font-mono text-white/30 uppercase">Resolution</div>
+                <div class="text-xs font-mono text-white/80">{{ photo.width }} × {{ photo.height }}</div>
+              </div>
+            </div>
+
+            <!-- Color Palette -->
+            <div>
+              <div class="text-[9px] font-mono text-white/30 uppercase mb-2">Extracted Palette</div>
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  (click)="previewPhotoAmbient(photo)"
+                  class="flex items-center gap-2 group"
+                  [title]="'Preview ambient glow: ' + photo.dominantHexPrimary"
+                >
+                  <div
+                    class="w-8 h-8 rounded-lg border border-white/20 group-hover:scale-110 transition-transform"
+                    [style.background]="photo.dominantHexPrimary"
+                  ></div>
+                  <span class="text-xs font-mono text-white/60">{{ photo.dominantHexPrimary }}</span>
+                </button>
+                <button
+                  type="button"
+                  (click)="previewPhotoAmbient(photo)"
+                  class="flex items-center gap-2 group"
+                  [title]="'Preview ambient glow: ' + photo.dominantHexSecondary"
+                >
+                  <div
+                    class="w-8 h-8 rounded-lg border border-white/20 group-hover:scale-110 transition-transform"
+                    [style.background]="photo.dominantHexSecondary"
+                  ></div>
+                  <span class="text-xs font-mono text-white/60">{{ photo.dominantHexSecondary }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="rounded-2xl border border-white/10 bg-white/[0.02] p-8 text-center">
+            <p class="text-sm text-white/30 font-mono">
+              Upload a photo to see server-extracted EXIF telemetry &amp; color palette
+            </p>
+          </div>
+        }
+
+        <!-- Photo Management Grid -->
+        <div>
+          <h3 class="font-mono text-[10px] tracking-[0.3em] text-white/40 uppercase mb-3">
+            Photo Management ({{ allPhotos().length }})
+          </h3>
+          <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+            @for (photo of allPhotos(); track photo.id) {
+              <div class="relative group rounded-lg overflow-hidden border border-white/10">
+                <img
+                  [src]="photo.imageUrl"
+                  [alt]="photo.title || 'Photo'"
+                  class="w-full aspect-square object-cover"
+                />
+                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    (click)="previewPhotoAmbient(photo)"
+                    class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white/70 text-xs flex items-center justify-center transition-colors"
+                    title="Preview ambient colors"
+                  >
+                    🎨
+                  </button>
+                  <button
+                    type="button"
+                    (click)="confirmDeletePhoto(photo.id)"
+                    class="w-7 h-7 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 text-xs flex items-center justify-center transition-colors"
+                    title="Delete photo"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Overlay -->
+    @if (deleteConfirmId()) {
+      <div
+        class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center"
+        (click)="cancelDelete()"
+      >
+        <div
+          class="bg-[#111116] border border-white/10 rounded-2xl p-6 max-w-sm mx-4 space-y-4"
+          (click)="$event.stopPropagation()"
+        >
+          <h3 class="text-lg font-light text-white/90">Delete Photo?</h3>
+          <p class="text-sm text-white/50">
+            This will remove the photo from Cloudinary and PostgreSQL. This action cannot be undone.
+          </p>
+          <div class="flex gap-3 justify-end">
+            <button
+              type="button"
+              (click)="cancelDelete()"
+              class="px-4 py-2 rounded-lg text-xs font-mono text-white/50 hover:text-white/80 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              (click)="executeDeletePhoto()"
+              class="px-4 py-2 rounded-lg text-xs font-mono bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+            >
+              Delete Permanently
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TAB 2: EVENT ALBUM CREATOR                                      -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'albums') {
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <!-- Album Form -->
+      <div class="space-y-6">
+        <form [formGroup]="albumForm" (ngSubmit)="createAlbum()" class="space-y-4">
+          <div>
+            <label class="block text-[10px] font-mono text-white/40 mb-1">Title *</label>
+            <input
+              formControlName="title"
+              type="text"
+              placeholder="e.g., Subzero Warehouse Rave"
+              class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+            />
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-mono text-white/40 mb-1">
+              Slug * <span class="text-white/25">(auto-generated from title)</span>
+            </label>
+            <input
+              formControlName="slug"
+              type="text"
+              placeholder="subzero-warehouse-rave"
+              class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-mono text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-mono text-white/40 mb-1">Category *</label>
+              <select
+                formControlName="categoryId"
+                class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 focus:border-purple-500/50 focus:outline-none transition-colors"
+              >
+                <option value="" disabled>Select category...</option>
+                @for (cat of categories(); track cat.id) {
+                  <option [value]="cat.id">{{ cat.name }} ({{ cat.timeOfDay }})</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-white/40 mb-1">Event Date</label>
+              <input
+                formControlName="eventDate"
+                type="date"
+                class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 focus:border-purple-500/50 focus:outline-none transition-colors"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-mono text-white/40 mb-1">Venue Name</label>
+              <input
+                formControlName="venueName"
+                type="text"
+                placeholder="Club name"
+                class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-white/40 mb-1">Location</label>
+              <input
+                formControlName="location"
+                type="text"
+                placeholder="City or region"
+                class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-mono text-white/40 mb-1">Description</label>
+            <textarea
+              formControlName="description"
+              rows="3"
+              placeholder="Brief story of the shoot..."
+              class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors resize-y"
+            ></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-mono text-white/40 mb-1">Cover Photo URL</label>
+              <input
+                formControlName="coverPhotoUrl"
+                type="text"
+                placeholder="https://..."
+                class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-white/40 mb-1">Dominant Hex *</label>
+              <div class="flex items-center gap-2">
+                <input
+                  type="color"
+                  [value]="albumForm.controls.dominantHex.value"
+                  (input)="albumForm.controls.dominantHex.setValue($any($event.target).value)"
+                  class="w-10 h-10 rounded border border-white/10 cursor-pointer bg-transparent"
+                />
+                <input
+                  formControlName="dominantHex"
+                  type="text"
+                  class="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-mono text-white/90 focus:border-purple-500/50 focus:outline-none transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              formControlName="featured"
+              class="w-4 h-4 rounded border-white/20 bg-white/5 text-purple-500"
+            />
+            <span class="text-xs font-mono text-white/60">Featured Album</span>
+          </label>
+
+          @if (albumError(); as err) {
+            <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">{{ err }}</div>
+          }
+          @if (albumSuccess(); as msg) {
+            <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">{{ msg }}</div>
+          }
+
+          <button
+            type="submit"
+            [disabled]="albumForm.invalid || albumSubmitting()"
+            class="w-full px-6 py-3 rounded-lg text-sm font-semibold bg-gradient-to-r from-purple-600 to-blue-600 text-white transition-all duration-300"
+            [class]="albumForm.invalid || albumSubmitting()
+              ? 'opacity-40 cursor-not-allowed'
+              : 'hover:shadow-lg hover:shadow-purple-500/20'"
+          >
+            @if (albumSubmitting()) {
+              <span class="flex items-center justify-center gap-2">
+                <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                Creating...
+              </span>
+            } @else {
+              Create Event Album →
+            }
+          </button>
+        </form>
+      </div>
+
+      <!-- Existing Albums List -->
+      <div>
+        <h3 class="font-mono text-[10px] tracking-[0.3em] text-white/40 uppercase mb-3">
+          Existing Albums ({{ albums().length }})
+        </h3>
+        <div class="space-y-3 max-h-[600px] overflow-y-auto">
+          @for (album of albums(); track album.id) {
+            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-2">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h4 class="text-sm text-white/90 font-medium">{{ album.title }}</h4>
+                  <p class="text-[10px] font-mono text-white/40">{{ album.slug }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  @if (album.featured) {
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-yellow-500/20 text-yellow-300">★</span>
+                  }
+                  <div class="w-4 h-4 rounded" [style.background]="album.dominantHex"></div>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-mono bg-white/10 text-white/50">
+                  {{ album.categoryName }}
+                </span>
+                @if (album.venueName) {
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-mono bg-white/10 text-white/50">
+                    {{ album.venueName }}
+                  </span>
+                }
+                @if (album.eventDate) {
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-mono bg-white/10 text-white/50">
+                    {{ album.eventDate }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+          @if (albums().length === 0) {
+            <p class="text-sm text-white/30 font-mono text-center py-8">No albums yet. Create one!</p>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TAB 3: BOOKINGS INBOX                                           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'bookings') {
+    <div class="space-y-6">
+      <!-- Status Filter Bar -->
+      <div class="flex flex-wrap items-center gap-2">
+        @for (status of statusFilters; track status) {
+          <button
+            type="button"
+            (click)="setBookingFilter(status)"
+            class="px-3 py-1.5 rounded-full text-xs font-mono border transition-colors flex items-center gap-2"
+            [class]="bookingFilter() === status
+              ? 'bg-white/15 border-white/30 text-white'
+              : 'bg-white/5 border-white/10 text-white/50 hover:text-white/70'"
+          >
+            {{ status }}
+            <span class="px-1.5 py-0.5 rounded-full text-[9px] bg-white/10">
+              {{ bookingCounts()[status] }}
+            </span>
+          </button>
+        }
+      </div>
+
+      <!-- Inquiry Cards -->
+      <div class="space-y-3">
+        @for (booking of filteredBookings(); track booking.id) {
+          <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5 space-y-3">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h4 class="text-sm text-white/90 font-medium">{{ booking.clientName }}</h4>
+                <p class="text-xs text-white/50">{{ booking.clientEmail }}</p>
+                @if (booking.clientPhone) {
+                  <p class="text-[10px] font-mono text-white/30">{{ booking.clientPhone }}</p>
+                }
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-1 rounded-full text-[10px] font-mono bg-white/10 text-white/60">
+                  {{ booking.eventType }}
+                </span>
+                <span
+                  class="px-2 py-1 rounded-full text-[10px] font-mono"
+                  [class]="booking.status === 'NEW' ? 'bg-blue-500/20 text-blue-300' :
+                    booking.status === 'CONTACTED' ? 'bg-yellow-500/20 text-yellow-300' :
+                    booking.status === 'BOOKED' ? 'bg-emerald-500/20 text-emerald-300' :
+                    'bg-white/10 text-white/40'"
+                >
+                  {{ booking.status }}
+                </span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div>
+                <span class="text-[9px] font-mono text-white/30 uppercase block">Event</span>
+                <span class="text-white/70">{{ booking.eventName }}</span>
+              </div>
+              @if (booking.venueOrLocation) {
+                <div>
+                  <span class="text-[9px] font-mono text-white/30 uppercase block">Venue</span>
+                  <span class="text-white/70">{{ booking.venueOrLocation }}</span>
+                </div>
+              }
+              <div>
+                <span class="text-[9px] font-mono text-white/30 uppercase block">Date</span>
+                <span class="text-white/70">{{ booking.eventDate }}</span>
+              </div>
+              @if (booking.durationHours) {
+                <div>
+                  <span class="text-[9px] font-mono text-white/30 uppercase block">Duration</span>
+                  <span class="text-white/70">{{ booking.durationHours }}h</span>
+                </div>
+              }
+              @if (booking.budgetRange) {
+                <div>
+                  <span class="text-[9px] font-mono text-white/30 uppercase block">Budget</span>
+                  <span class="text-white/70">{{ booking.budgetRange }}</span>
+                </div>
+              }
+            </div>
+
+            @if (booking.projectDetails) {
+              <div>
+                <span class="text-[9px] font-mono text-white/30 uppercase block mb-1">Details</span>
+                <p class="text-xs text-white/50 line-clamp-3">{{ booking.projectDetails }}</p>
+              </div>
+            }
+
+            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+              <span class="text-[10px] font-mono text-white/25">
+                {{ booking.createdAt | date:'medium' }}
+              </span>
+              <div class="flex gap-2">
+                @if (booking.status === 'NEW') {
+                  <button
+                    type="button"
+                    (click)="updateBookingStatus(booking.id, 'CONTACTED')"
+                    class="px-3 py-1 rounded-lg text-[10px] font-mono bg-yellow-500/10 text-yellow-300 border border-yellow-500/20 hover:bg-yellow-500/20 transition-colors"
+                  >
+                    Mark Contacted
+                  </button>
+                }
+                @if (booking.status === 'NEW' || booking.status === 'CONTACTED') {
+                  <button
+                    type="button"
+                    (click)="updateBookingStatus(booking.id, 'BOOKED')"
+                    class="px-3 py-1 rounded-lg text-[10px] font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                  >
+                    Mark Booked
+                  </button>
+                }
+                @if (booking.status !== 'ARCHIVED') {
+                  <button
+                    type="button"
+                    (click)="updateBookingStatus(booking.id, 'ARCHIVED')"
+                    class="px-3 py-1 rounded-lg text-[10px] font-mono bg-white/5 text-white/40 border border-white/10 hover:bg-white/10 transition-colors"
+                  >
+                    Archive
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        }
+        @if (filteredBookings().length === 0) {
+          <div class="text-center py-12">
+            <p class="text-sm text-white/30 font-mono">No inquiries found.</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</section>

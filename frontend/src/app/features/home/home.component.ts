@@ -24,11 +24,8 @@ const FALLBACK_HERO =
   'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=3200&q=85';
 const LOCAL_HERO = '/hero/panorama-8k.webp';
 
-/** Lerp damping factor per frame — lower = heavier, more cinematic camera head. */
 const PAN_DAMPING = 0.04;
-/** Max translate shift as a percentage of the container width (image is 135% wide). */
 const PAN_MAX_SHIFT = 26;
-/** Stop animating once the camera has effectively settled. */
 const PAN_EPSILON = 0.0001;
 
 type HeroMode = 'pan' | 'letterbox';
@@ -50,25 +47,20 @@ export class HomeComponent implements OnInit {
   private readonly api = inject(PortfolioApiService);
   private readonly router = inject(Router);
 
-  // ─── Data Signals ──────────────────────────────────────────────
   readonly featuredAlbums = signal<EventAlbumResponse[]>([]);
   readonly featuredPhotos = signal<PhotoResponse[]>([]);
   readonly allPhotos = signal<PhotoResponse[]>([]);
 
-  // ─── Hero Panorama State ───────────────────────────────────────
-  /** Smoothed cursor position (0–1) actually rendered on screen. */
   readonly currentPanX = signal<number>(0.5);
   readonly heroMode = signal<HeroMode>('pan');
   readonly heroImgLoaded = signal(false);
   readonly heroImgSrc = signal(FALLBACK_HERO);
   readonly heroContainerRef = viewChild<ElementRef<HTMLElement>>('heroContainer');
 
-  /** Raw cursor target (0–1). The RAF loop lerps towards this. */
   private targetPanX = 0.5;
   private rafId: number | null = null;
   private readonly destroyRef = inject(DestroyRef);
 
-  // ─── Lightbox State ────────────────────────────────────────────
   readonly lightboxPhoto = signal<PhotoResponse | null>(null);
   readonly lightboxIndex = computed(() => {
     const photo = this.lightboxPhoto();
@@ -76,8 +68,6 @@ export class HomeComponent implements OnInit {
     return this.featuredPhotos().findIndex((p) => p.id === photo.id);
   });
 
-  // ─── Derived ───────────────────────────────────────────────────
-  /** Heavy, GPU-accelerated camera pan driven by the smoothed signal. */
   readonly panoTransform = computed(() => {
     const shift = (-this.currentPanX() * PAN_MAX_SHIFT).toFixed(3);
     return `translate3d(${shift}%, 0, 0)`;
@@ -95,11 +85,10 @@ export class HomeComponent implements OnInit {
   });
 
   readonly gearList = [
-    { label: 'Sony A7 IV', tag: 'Body' },
-    { label: 'FE 24-70mm F2.8 GM II', tag: 'Zoom' },
-    { label: 'FE 35mm F1.4 GM', tag: 'Prime' },
-    { label: 'FE 200-600mm G OSS', tag: 'Telephoto' },
-    { label: 'FE 14mm F1.8 GM', tag: 'Ultra-Wide' },
+    { label: 'Canon 6D Mark II', tag: 'Body' },
+    { label: 'EF 28-105mm F3.5-4.5', tag: 'Zoom' },
+    { label: 'EF 50mm F1.8', tag: 'Prime' },
+    { label: 'EF 70-300mm F4-5.6 IS USM', tag: 'Telephoto' },
   ];
 
   readonly stackList = [
@@ -115,8 +104,6 @@ export class HomeComponent implements OnInit {
       const current = this.currentPanX();
       const diff = this.targetPanX - current;
 
-      // Only write the signal while the camera is still travelling.
-      // This keeps idle frames free of change-detection work.
       if (Math.abs(diff) > PAN_EPSILON) {
         this.currentPanX.set(current + diff * PAN_DAMPING);
       }
@@ -133,7 +120,6 @@ export class HomeComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Try local panorama first; fall back to Unsplash on error
     const probe = new Image();
     probe.onload = () => {
       this.heroImgSrc.set(LOCAL_HERO);
@@ -148,7 +134,6 @@ export class HomeComponent implements OnInit {
     this.loadFeaturedData();
   }
 
-  // ─── Hero Interactions ─────────────────────────────────────────
 
   onHeroMouseMove(event: MouseEvent): void {
     if (this.heroMode() !== 'pan') return;
@@ -166,7 +151,6 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  // ─── Section 2: Duality Portals ───────────────────────────────
 
   onNightHover(): void {
     this.atmosphere.setAmbientColors('#FF007F', '#7928CA');
@@ -190,7 +174,6 @@ export class HomeComponent implements OnInit {
     this.router.navigate(['/explore']);
   }
 
-  // ─── Section 3: Album Strip ────────────────────────────────────
 
   selectAlbum(album: EventAlbumResponse): void {
     this.atmosphere.setLightingMode(album.timeOfDay);
@@ -203,7 +186,6 @@ export class HomeComponent implements OnInit {
     this.router.navigate(['/explore']);
   }
 
-  // ─── Section 4: Featured Photos / Lightbox ─────────────────────
 
   openLightbox(photo: PhotoResponse): void {
     this.lightboxPhoto.set(photo);
@@ -215,13 +197,10 @@ export class HomeComponent implements OnInit {
     document.body.style.overflow = '';
   }
 
-  // ─── Section 5: Bento ──────────────────────────────────────────
-
   toggleExifHud(): void {
     this.atmosphere.toggleExifHud();
   }
 
-  // ─── Navigation helpers ────────────────────────────────────────
 
   goToExplore(): void {
     this.router.navigate(['/explore']);
@@ -231,7 +210,6 @@ export class HomeComponent implements OnInit {
     this.router.navigate(['/booking']);
   }
 
-  // ─── Data Loading ──────────────────────────────────────────────
 
   private loadFeaturedData(): void {
     this.api.getAlbums().subscribe((albums) => {

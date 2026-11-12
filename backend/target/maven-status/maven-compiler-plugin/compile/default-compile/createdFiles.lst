@@ -7,6 +7,6 @@ com/portfolio/photography/controller/AdminPortfolioController.class
 com/portfolio/photography/exception/GlobalExceptionHandler.class
 com/portfolio/photography/config/CloudinaryConfig.class
 com/portfolio/photography/service/ImageAnalysisService.class
-com/portfolio/photography/config/SecurityConfig.class
 com/portfolio/photography/service/ImageAnalysisService$AnalyzedImageMetadata.class
+com/portfolio/photography/config/SecurityConfig.class
 com/portfolio/photography/exception/ResourceNotFoundException.class
