@@ -2,7 +2,7 @@
   "name": "photography-portfolio",
   "compatibility_date": "2026-11-12",
   "assets": {
-    "directory": "./dist/photography-portfolio/browser",
+    "directory": "./dist/frontend/browser",
     "not_found_handling": "single-page-application"
   }
 }
