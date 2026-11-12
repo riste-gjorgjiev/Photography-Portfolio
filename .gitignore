@@ -5,3 +5,6 @@
 *.env
 backend/.env
 application-local.yml
+.neon
+node_modules/
+.env.local
