@@ -1,8 +1,9 @@
 name: Build & Deploy Backend to Oracle Cloud
 
 on:
+  workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, master]
     paths:
       - 'backend/**'
       - '.github/workflows/deploy-backend.yml'
@@ -34,7 +35,7 @@ jobs:
           context: ./backend
           platforms: linux/amd64
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/photography-api:latest
+          tags: ghcr.io/riste-gjorgjiev/photography-api:latest
 
       - name: Deploy to Oracle Cloud VM via SSH
         uses: appleboy/ssh-action@v1.0.3
