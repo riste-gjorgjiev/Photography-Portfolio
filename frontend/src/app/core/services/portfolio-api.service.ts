@@ -9,12 +9,13 @@ import {
 } from '../models/portfolio.models';
 import {Observable} from 'rxjs';
 import {AuthService} from './auth.service';
+import {environment} from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class PortfolioApiService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
-  private readonly baseUrl = 'http://localhost:8080/api/v1';
+  private readonly baseUrl = environment.apiUrl;
 
   getCategories(timeOfDay?: TimeOfDay): Observable<CategoryResponse[]> {
     const params = this.buildParams({ timeOfDay })

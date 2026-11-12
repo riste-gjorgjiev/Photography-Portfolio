@@ -1,9 +1,9 @@
 target/
+.env
+.git
+.gitignore
 .idea/
 *.iml
 *.log
-.git/
-.gitignore
-README.md
-.vscode/
-*.md
+node_modules/
+.DS_Store
