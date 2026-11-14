@@ -95,9 +95,8 @@
                 </button>
               </div>
               <div class="max-h-64 overflow-y-auto rounded-lg border border-white/10 divide-y divide-white/5 bg-white/[0.02]">
-                @for (entry of queue(); track entry.thumbUrl; let idx = $index) {
+                @for (entry of queue(); track entry.id; let idx = $index) {
                   <div class="flex items-center gap-3 px-3 py-2">
-                    <img [src]="entry.thumbUrl" alt="" class="w-8 h-8 rounded object-cover shrink-0" />
                     <span class="flex-1 truncate text-xs font-mono text-white/70">{{ entry.file.name }}</span>
                     <span class="text-[10px] font-mono text-white/40 shrink-0">
                       {{ (entry.file.size / 1048576).toFixed(2) }} MB

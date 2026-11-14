@@ -39,18 +39,22 @@ public class CloudinaryService {
         }
 
         try {
+            // Chunked upload: Cloudinary's single-request API caps files at 10 MB,
+            // which full-resolution session photos easily exceed.
+            String publicId = "portfolio/" + categorySlug + "/" + UUID.randomUUID();
             @SuppressWarnings("unchecked")
             Map<String, Object> uploadResult = cloudinary.uploader().upload(
                     file.getBytes(),
                     ObjectUtils.asMap(
-                            "folder", "portfolio/" + categorySlug,
-                            "resource_type", "image"
+                            "public_id", publicId,
+                            "resource_type", "image",
+                            "chunk_size", 5_000_000
                     )
             );
 
-            String publicId = (String) uploadResult.get("public_id");
+            String resultPublicId = (String) uploadResult.getOrDefault("public_id", publicId);
             String secureUrl = (String) uploadResult.get("secure_url");
-            return new UploadResult(publicId, secureUrl);
+            return new UploadResult(resultPublicId, secureUrl);
         } catch (Exception e) {
             log.error("Cloudinary upload failed for {} (cloud-name: {}, folder: portfolio/{})",
                     file.getOriginalFilename(), cloudName, categorySlug, e);

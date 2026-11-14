@@ -28,13 +28,15 @@ type AdminTab = 'photos' | 'albums' | 'categories' | 'bookings';
 type QueueItemStatus = 'pending' | 'uploading' | 'done' | 'failed';
 
 interface QueueEntry {
+  id: string;
   file: File;
   status: QueueItemStatus;
   error: string | null;
-  thumbUrl: string;
 }
 
 const MAX_UPLOAD_SIZE_BYTES = 25 * 1024 * 1024;
+const BULK_UPLOAD_CONCURRENCY = 3;
+let nextEntryId = 0;
 
 @Component({
   selector: 'app-admin-cms',
@@ -268,10 +270,10 @@ export class AdminCmsComponent implements OnInit {
       if (existingKeys.has(key)) continue;
       existingKeys.add(key);
       newEntries.push({
+        id: `${Date.now()}-${nextEntryId++}`,
         file,
         status: 'pending',
         error: null,
-        thumbUrl: URL.createObjectURL(file),
       });
     }
 
@@ -295,28 +297,32 @@ export class AdminCmsComponent implements OnInit {
   }
 
   private syncSinglePreview(): void {
-    this.localPreviewUrl.set(this.selectedThumbUrl());
+    const single = this.queue().length === 1 ? this.queue()[0].file : null;
+    if (single === this.previewFile) {
+      this.localPreviewUrl.set(this.previewUrl);
+      return;
+    }
+    if (this.previewUrl) {
+      URL.revokeObjectURL(this.previewUrl);
+    }
+    this.previewFile = single;
+    this.previewUrl = single ? URL.createObjectURL(single) : null;
+    this.localPreviewUrl.set(this.previewUrl);
   }
 
-  private selectedThumbUrl(): string | null {
-    return this.queue().length === 1 ? this.queue()[0].thumbUrl : null;
-  }
+  private previewFile: File | null = null;
+  private previewUrl: string | null = null;
 
   removeQueueEntry(index: number): void {
     if (this.uploading()) return;
-    this.queue.update((q) => {
-      const entry = q[index];
-      if (entry) URL.revokeObjectURL(entry.thumbUrl);
-      return q.filter((_, i) => i !== index);
-    });
+    this.queue.update((q) => q.filter((_, i) => i !== index));
     this.syncSinglePreview();
   }
 
   clearQueue(): void {
     if (this.uploading()) return;
-    this.queue().forEach((e) => URL.revokeObjectURL(e.thumbUrl));
     this.queue.set([]);
-    this.localPreviewUrl.set(null);
+    this.syncSinglePreview();
     this.bulkSummary.set(null);
     this.uploadError.set(null);
   }
@@ -382,39 +388,72 @@ export class AdminCmsComponent implements OnInit {
     let lastResponse: PhotoResponse | null = null;
     let authFailed = false;
 
-    const snapshot = this.queue();
-    for (let i = 0; i < snapshot.length; i++) {
-      const entry = snapshot[i];
-      if (entry.status !== 'pending' && entry.status !== 'failed') continue;
-
-      this.setQueueEntryStatus(i, 'uploading');
-      const metadata: PhotoUploadRequest = {
-        title: null,
-        caption: raw.caption?.trim() || null,
-        categoryId: raw.categoryId!,
-        eventAlbumId: raw.eventAlbumId || null,
-        timeOfDayOverride: raw.timeOfDayOverride as TimeOfDay,
-        featured: uploadedCount === 0 ? (raw.featured ?? false) : false,
-        displayOrder: nextOrder++,
-      };
-
-      try {
-        const response = await firstValueFrom(this.api.uploadPhoto(entry.file, metadata));
-        this.allPhotos.update((photos) => [response, ...photos]);
-        this.setQueueEntryStatus(i, 'done');
-        uploadedCount++;
-        lastResponse = response;
-      } catch (err: any) {
-        console.error('Bulk photo upload error:', err);
-        failedCount++;
-        if (err.status === 401 || err.status === 403) {
-          this.setQueueEntryStatus(i, 'failed', 'Authentication failed');
-          authFailed = true;
-          break;
-        }
-        this.setQueueEntryStatus(i, 'failed', this.problemDetail(err, 'Upload failed.'));
-      }
+    const eligibleIndexes = this.queue()
+      .map((e, i) => ({ e, i }))
+      .filter(({ e }) => e.status === 'pending' || e.status === 'failed')
+      .map(({ i }) => i);
+    if (eligibleIndexes.length === 0) {
+      this.uploading.set(false);
+      return;
     }
+    const firstEligible = eligibleIndexes[0];
+    let cursor = 0;
+
+    // Buffer successful uploads and flush in batches: prepending into
+    // allPhotos per photo would re-render the whole management grid N times.
+    const newPhotos: PhotoResponse[] = [];
+    const flushNewPhotos = (): void => {
+      if (newPhotos.length === 0) return;
+      const batch = newPhotos.splice(0, newPhotos.length);
+      this.allPhotos.update((photos) => [...batch, ...photos]);
+    };
+
+    const worker = async (): Promise<void> => {
+      while (!authFailed) {
+        const k = cursor++;
+        if (k >= eligibleIndexes.length) return;
+        const qi = eligibleIndexes[k];
+        const entry = this.queue()[qi];
+        if (!entry) return;
+
+        this.setQueueEntryStatus(qi, 'uploading');
+        const metadata: PhotoUploadRequest = {
+          title: null,
+          caption: raw.caption?.trim() || null,
+          categoryId: raw.categoryId!,
+          eventAlbumId: raw.eventAlbumId || null,
+          timeOfDayOverride: raw.timeOfDayOverride as TimeOfDay,
+          featured: qi === firstEligible ? (raw.featured ?? false) : false,
+          displayOrder: nextOrder++,
+        };
+
+        try {
+          const response = await firstValueFrom(this.api.uploadPhoto(entry.file, metadata));
+          newPhotos.push(response);
+          if (newPhotos.length >= 25) flushNewPhotos();
+          this.setQueueEntryStatus(qi, 'done');
+          uploadedCount++;
+          lastResponse = response;
+        } catch (err: any) {
+          console.error('Bulk photo upload error:', err);
+          failedCount++;
+          if (err.status === 401 || err.status === 403) {
+            this.setQueueEntryStatus(qi, 'failed', 'Authentication failed');
+            authFailed = true;
+            return;
+          }
+          this.setQueueEntryStatus(qi, 'failed', this.problemDetail(err, 'Upload failed.'));
+        }
+      }
+    };
+
+    await Promise.all(
+      Array.from(
+        { length: Math.min(BULK_UPLOAD_CONCURRENCY, eligibleIndexes.length) },
+        () => worker(),
+      ),
+    );
+    flushNewPhotos();
 
     this.uploading.set(false);
 
