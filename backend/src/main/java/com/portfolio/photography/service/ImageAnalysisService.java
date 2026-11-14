@@ -11,12 +11,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReadParam;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.TimeZone;
 
 @Service
@@ -58,17 +62,33 @@ public class ImageAnalysisService {
         try {
             byte[] bytes = file.getBytes();
 
-            try (InputStream imgStream = new ByteArrayInputStream(bytes)) {
-                BufferedImage image = ImageIO.read(imgStream);
-                if (image != null) {
-                    width = image.getWidth();
-                    height = image.getHeight();
-                    String[] palette = extractAmbientPalette(image, defaultPrimary, defaultSecondary);
-                    primaryHex = palette[0];
-                    secondaryHex = palette[1];
+            try (ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
+                Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
+                if (readers.hasNext()) {
+                    ImageReader reader = readers.next();
+                    try {
+                        reader.setInput(iis);
+                        // True pixel dimensions come from the stream header, no decoding needed.
+                        width = reader.getWidth(0);
+                        height = reader.getHeight(0);
+
+                        // Decode subsampled to <=1024px: a full-res decode of a 40MP JPEG
+                        // needs ~160MB heap and OOM-kills the JVM on the small VM, and the
+                        // palette below only ever samples a ~24x24 grid anyway.
+                        int subsample = Math.max(1, (int) Math.ceil(Math.max(width, height) / 1024.0));
+                        ImageReadParam param = reader.getDefaultReadParam();
+                        param.setSourceSubsampling(subsample, subsample, 0, 0);
+                        BufferedImage image = reader.read(0, param);
+
+                        String[] palette = extractAmbientPalette(image, defaultPrimary, defaultSecondary);
+                        primaryHex = palette[0];
+                        secondaryHex = palette[1];
+                    } finally {
+                        reader.dispose();
+                    }
                 }
             } catch (Exception e) {
-                log.warn("BufferedImage color extraction skipped for {}: {}", file.getOriginalFilename(), e.getMessage());
+                log.warn("Ambient color extraction skipped for {}: {}", file.getOriginalFilename(), e.getMessage());
             }
 
             try (InputStream metaStream = new ByteArrayInputStream(bytes)) {
