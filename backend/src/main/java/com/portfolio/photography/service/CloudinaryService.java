@@ -39,11 +39,11 @@ public class CloudinaryService {
         }
 
         try {
-            // Chunked upload: Cloudinary's single-request API caps files at 10 MB,
-            // which full-resolution session photos easily exceed.
+            // uploadLarge() sends the file in chunked requests: Cloudinary's plain
+            // upload() API rejects anything over 10 MB (and silently ignores chunk_size).
             String publicId = "portfolio/" + categorySlug + "/" + UUID.randomUUID();
             @SuppressWarnings("unchecked")
-            Map<String, Object> uploadResult = cloudinary.uploader().upload(
+            Map<String, Object> uploadResult = cloudinary.uploader().uploadLarge(
                     file.getBytes(),
                     ObjectUtils.asMap(
                             "public_id", publicId,

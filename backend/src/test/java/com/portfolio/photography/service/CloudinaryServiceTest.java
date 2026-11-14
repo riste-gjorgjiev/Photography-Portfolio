@@ -36,7 +36,7 @@ class CloudinaryServiceTest {
         Cloudinary cloudinary = mock(Cloudinary.class);
         Uploader uploader = mock(Uploader.class);
         when(cloudinary.uploader()).thenReturn(uploader);
-        when(uploader.upload(any(byte[].class), anyMap()))
+        when(uploader.uploadLarge(any(byte[].class), anyMap()))
                 .thenThrow(new IOException("Invalid credentials"));
 
         CloudinaryService service = new CloudinaryService(cloudinary);
@@ -54,7 +54,7 @@ class CloudinaryServiceTest {
         Cloudinary cloudinary = mock(Cloudinary.class);
         Uploader uploader = mock(Uploader.class);
         when(cloudinary.uploader()).thenReturn(uploader);
-        when(uploader.upload(any(byte[].class), anyMap()))
+        when(uploader.uploadLarge(any(byte[].class), anyMap()))
                 .thenThrow(new IOException());
 
         CloudinaryService service = new CloudinaryService(cloudinary);
