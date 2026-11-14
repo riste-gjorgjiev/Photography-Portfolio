@@ -47,6 +47,15 @@
 
     <button
       type="button"
+      (click)="activeTab.set('categories')"
+      class="px-4 py-2 rounded-md text-xs font-mono tracking-wider transition-colors"
+      [class]="activeTab() === 'categories' ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white/80'"
+    >
+      Categories
+    </button>
+
+    <button
+      type="button"
       (click)="activeTab.set('bookings')"
       class="px-4 py-2 rounded-md text-xs font-mono tracking-wider transition-colors"
       [class]="activeTab() === 'bookings' ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white/80'"
@@ -336,7 +345,7 @@
                   [alt]="photo.title || 'Photo'"
                   class="w-full aspect-square object-cover"
                 />
-                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <div class="absolute inset-0 bg-black/60 opacity-100 sm:bg-transparent sm:opacity-0 sm:group-hover:bg-black/60 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button
                     type="button"
                     (click)="previewPhotoAmbient(photo)"
@@ -568,6 +577,14 @@
                     </span>
                   }
                   <div class="w-4 h-4 rounded" [style.background]="album.dominantHex"></div>
+                  <button
+                    type="button"
+                    (click)="confirmDeleteAlbum(album.id)"
+                    class="w-7 h-7 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 flex items-center justify-center transition-colors"
+                    title="Delete album"
+                  >
+                    <app-icon name="x" [size]="14" />
+                  </button>
                 </div>
               </div>
               <div class="flex flex-wrap gap-2">
@@ -593,10 +610,232 @@
         </div>
       </div>
     </div>
+
+    @if (deleteConfirmAlbumId()) {
+      <div
+        class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center"
+        (click)="cancelDeleteAlbum()"
+      >
+        <div
+          class="bg-[#111116] border border-white/10 rounded-2xl p-6 max-w-sm mx-4 space-y-4"
+          (click)="$event.stopPropagation()"
+        >
+          <h3 class="text-lg font-display font-light text-white/90">Delete Album?</h3>
+          <p class="text-sm text-white/50">
+            The album will be deleted. Photos inside it will remain and become standalone photos.
+          </p>
+          <div class="flex gap-3 justify-end">
+            <button
+              type="button"
+              (click)="cancelDeleteAlbum()"
+              class="px-4 py-2 rounded-lg text-xs font-mono text-white/50 hover:text-white/80 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              (click)="executeDeleteAlbum()"
+              class="px-4 py-2 rounded-lg text-xs font-mono bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+            >
+              Delete Album
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   }
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- TAB 3: BOOKINGS INBOX                                           -->
+  <!-- TAB 3: CATEGORIES                                               -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'categories') {
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <div class="space-y-6">
+        <form [formGroup]="categoryForm" (ngSubmit)="createCategory()" class="space-y-4">
+          <div>
+            <label class="block text-[10px] font-mono text-white/40 mb-1">Name *</label>
+            <input
+              formControlName="name"
+              type="text"
+              placeholder="e.g., Street Photography"
+              class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+            />
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-mono text-white/40 mb-1">
+              Slug * <span class="text-white/25">(auto-generated from name)</span>
+            </label>
+            <input
+              formControlName="slug"
+              type="text"
+              placeholder="street-photography"
+              class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-mono text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-mono text-white/40 mb-1.5">Time of Day *</label>
+              <div class="flex gap-2">
+                @for (tod of ['NIGHT', 'DAY']; track tod) {
+                  <button
+                    type="button"
+                    (click)="categoryForm.controls.timeOfDay.setValue($any(tod))"
+                    class="flex-1 px-3 py-1.5 rounded-lg text-xs font-mono border transition-colors"
+                    [class]="categoryForm.controls.timeOfDay.value === tod
+                      ? 'bg-white/15 border-white/30 text-white'
+                      : 'bg-white/5 border-white/10 text-white/50 hover:text-white/70'"
+                  >
+                    {{ tod }}
+                  </button>
+                }
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-white/40 mb-1">Display Order</label>
+              <input
+                formControlName="displayOrder"
+                type="number"
+                min="0"
+                class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-mono text-white/90 focus:border-purple-500/50 focus:outline-none transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-mono text-white/40 mb-1">Default Ambient Hex *</label>
+            <div class="flex items-center gap-2">
+              <input
+                type="color"
+                [value]="categoryForm.controls.defaultAmbientHex.value"
+                (input)="categoryForm.controls.defaultAmbientHex.setValue($any($event.target).value)"
+                class="w-10 h-10 rounded border border-white/10 cursor-pointer bg-transparent"
+              />
+              <input
+                formControlName="defaultAmbientHex"
+                type="text"
+                class="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-mono text-white/90 focus:border-purple-500/50 focus:outline-none transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-mono text-white/40 mb-1">Description</label>
+            <textarea
+              formControlName="description"
+              rows="3"
+              placeholder="What kind of work belongs in this category?"
+              class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors resize-y"
+            ></textarea>
+          </div>
+
+          @if (categoryError(); as err) {
+            <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">{{ err }}</div>
+          }
+          @if (categorySuccess(); as msg) {
+            <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">{{ msg }}</div>
+          }
+
+          <button
+            type="submit"
+            [disabled]="categoryForm.invalid || categorySubmitting()"
+            class="w-full px-6 py-3 rounded-lg text-sm font-semibold bg-gradient-to-r from-purple-600 to-blue-600 text-white transition-all duration-300"
+            [class]="categoryForm.invalid || categorySubmitting()
+              ? 'opacity-40 cursor-not-allowed'
+              : 'hover:shadow-lg hover:shadow-purple-500/20'"
+          >
+            @if (categorySubmitting()) {
+              <span class="flex items-center justify-center gap-2">
+                <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                Creating...
+              </span>
+            } @else {
+              <span class="inline-flex items-center justify-center gap-2">
+                Create Category
+                <app-icon name="arrow-right" [size]="16" />
+              </span>
+            }
+          </button>
+        </form>
+      </div>
+
+      <div>
+        <h3 class="font-mono text-[10px] tracking-[0.3em] text-white/40 uppercase mb-3">
+          Existing Categories ({{ categories().length }})
+        </h3>
+        <div class="space-y-3 max-h-[600px] overflow-y-auto">
+          @for (category of categories(); track category.id) {
+            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-2">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h4 class="text-sm text-white/90 font-medium">{{ category.name }}</h4>
+                  <p class="text-[10px] font-mono text-white/40">{{ category.slug }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-mono bg-white/10 text-white/50">
+                    {{ category.timeOfDay }}
+                  </span>
+                  <div class="w-4 h-4 rounded" [style.background]="category.defaultAmbientHex"></div>
+                  <button
+                    type="button"
+                    (click)="confirmDeleteCategory(category.id)"
+                    class="w-7 h-7 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 flex items-center justify-center transition-colors"
+                    title="Delete category"
+                  >
+                    <app-icon name="x" [size]="14" />
+                  </button>
+                </div>
+              </div>
+              @if (category.description) {
+                <p class="text-xs text-white/50">{{ category.description }}</p>
+              }
+            </div>
+          }
+          @if (categories().length === 0) {
+            <p class="text-sm text-white/30 font-mono text-center py-8">No categories yet. Create one!</p>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (deleteConfirmCategoryId()) {
+      <div
+        class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center"
+        (click)="cancelDeleteCategory()"
+      >
+        <div
+          class="bg-[#111116] border border-white/10 rounded-2xl p-6 max-w-sm mx-4 space-y-4"
+          (click)="$event.stopPropagation()"
+        >
+          <h3 class="text-lg font-display font-light text-white/90">Delete Category?</h3>
+          <p class="text-sm text-white/50">
+            Categories that still contain photos or albums cannot be deleted. Move or delete that content first.
+          </p>
+          <div class="flex gap-3 justify-end">
+            <button
+              type="button"
+              (click)="cancelDeleteCategory()"
+              class="px-4 py-2 rounded-lg text-xs font-mono text-white/50 hover:text-white/80 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              (click)="executeDeleteCategory()"
+              class="px-4 py-2 rounded-lg text-xs font-mono bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+            >
+              Delete Category
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TAB 4: BOOKINGS INBOX                                           -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'bookings') {
     <div class="space-y-6">

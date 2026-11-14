@@ -113,6 +113,15 @@ export interface CreateEventAlbumRequest {
   featured: boolean;
 }
 
+export interface CreateCategoryRequest {
+  name: string;
+  slug: string;
+  description: string | null;
+  timeOfDay: TimeOfDay;
+  defaultAmbientHex: string | null;
+  displayOrder: number | null;
+}
+
 export const EVENT_TYPES = [
   { value: 'NIGHTCLUB', label: 'Nightclub / Rave Coverage', ambientHex: '#FF007F' },
   { value: 'FESTIVAL', label: 'Festival / Multi-Stage', ambientHex: '#7928CA' },

@@ -13,6 +13,7 @@ import {
   BookingInquiryResponse,
   BookingStatus,
   CategoryResponse,
+  CreateCategoryRequest,
   CreateEventAlbumRequest,
   EventAlbumResponse,
   PhotoResponse,
@@ -21,7 +22,7 @@ import {
 } from '../../core/models/portfolio.models';
 import { UiIconComponent } from '../../shared/components/ui-icon/ui-icon.component';
 
-type AdminTab = 'photos' | 'albums' | 'bookings';
+type AdminTab = 'photos' | 'albums' | 'categories' | 'bookings';
 
 @Component({
   selector: 'app-admin-cms',
@@ -54,6 +55,12 @@ export class AdminCmsComponent implements OnInit {
   readonly albumSubmitting = signal(false);
   readonly albumError = signal<string | null>(null);
   readonly albumSuccess = signal<string | null>(null);
+  readonly deleteConfirmAlbumId = signal<string | null>(null);
+
+  readonly categorySubmitting = signal(false);
+  readonly categoryError = signal<string | null>(null);
+  readonly categorySuccess = signal<string | null>(null);
+  readonly deleteConfirmCategoryId = signal<string | null>(null);
 
   readonly bookingFilter = signal<BookingStatus | 'ALL'>('ALL');
 
@@ -86,6 +93,15 @@ export class AdminCmsComponent implements OnInit {
     coverPhotoUrl: [''],
     dominantHex: ['#6366F1', [Validators.required, Validators.pattern(/^#[0-9A-Fa-f]{6}$/)]],
     featured: [false],
+  });
+
+  readonly categoryForm = this.fb.group({
+    name: ['', [Validators.required, Validators.maxLength(100)]],
+    slug: ['', [Validators.required, Validators.maxLength(100), Validators.pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)]],
+    description: [''],
+    timeOfDay: ['NIGHT' as TimeOfDay, Validators.required],
+    defaultAmbientHex: ['#6366F1', [Validators.required, Validators.pattern(/^#[0-9A-Fa-f]{6}$/)]],
+    displayOrder: [0],
   });
 
 
@@ -135,6 +151,13 @@ export class AdminCmsComponent implements OnInit {
     this.albumForm.controls.title.valueChanges.subscribe((title) => {
       if (title && !this.albumForm.controls.slug.dirty) {
         this.albumForm.controls.slug.setValue(this.slugify(title));
+      }
+    });
+
+    // Auto-slugify category name
+    this.categoryForm.controls.name.valueChanges.subscribe((name) => {
+      if (name && !this.categoryForm.controls.slug.dirty) {
+        this.categoryForm.controls.slug.setValue(this.slugify(name));
       }
     });
   }
@@ -285,6 +308,104 @@ export class AdminCmsComponent implements OnInit {
     });
   }
 
+  confirmDeleteAlbum(id: string): void {
+    this.deleteConfirmAlbumId.set(id);
+  }
+
+  cancelDeleteAlbum(): void {
+    this.deleteConfirmAlbumId.set(null);
+  }
+
+  executeDeleteAlbum(): void {
+    const id = this.deleteConfirmAlbumId();
+    if (!id) return;
+
+    this.albumError.set(null);
+    this.api.deleteAlbum(id).subscribe({
+      next: () => {
+        this.albums.update((albums) => albums.filter((a) => a.id !== id));
+        this.allPhotos.update((photos) =>
+          photos.map((p) =>
+            p.eventAlbumId === id ? { ...p, eventAlbumId: null, eventAlbumTitle: null } : p,
+          ),
+        );
+        this.deleteConfirmAlbumId.set(null);
+      },
+      error: (err) => {
+        console.error('Album delete error:', err);
+        this.albumError.set(this.problemDetail(err, 'Failed to delete album.'));
+        this.deleteConfirmAlbumId.set(null);
+      },
+    });
+  }
+
+  createCategory(): void {
+    if (this.categoryForm.invalid || this.categorySubmitting()) return;
+
+    this.categorySubmitting.set(true);
+    this.categoryError.set(null);
+    this.categorySuccess.set(null);
+
+    const raw = this.categoryForm.getRawValue();
+    const request: CreateCategoryRequest = {
+      name: raw.name!.trim(),
+      slug: raw.slug!.trim(),
+      description: raw.description?.trim() || null,
+      timeOfDay: raw.timeOfDay as TimeOfDay,
+      defaultAmbientHex: raw.defaultAmbientHex || '#1E293B',
+      displayOrder: raw.displayOrder ?? 0,
+    };
+
+    this.api.createCategory(request).subscribe({
+      next: (category) => {
+        this.categorySubmitting.set(false);
+        this.categories.update((existing) =>
+          [...existing, category].sort(
+            (a, b) =>
+              a.timeOfDay.localeCompare(b.timeOfDay) || a.displayOrder - b.displayOrder,
+          ),
+        );
+        this.categorySuccess.set(`Category "${category.name}" created!`);
+        this.categoryForm.reset({
+          timeOfDay: 'NIGHT',
+          defaultAmbientHex: '#6366F1',
+          displayOrder: 0,
+        });
+      },
+      error: (err) => {
+        this.categorySubmitting.set(false);
+        console.error('Category creation error:', err);
+        this.categoryError.set(this.problemDetail(err, 'Failed to create category.'));
+      },
+    });
+  }
+
+  confirmDeleteCategory(id: string): void {
+    this.deleteConfirmCategoryId.set(id);
+  }
+
+  cancelDeleteCategory(): void {
+    this.deleteConfirmCategoryId.set(null);
+  }
+
+  executeDeleteCategory(): void {
+    const id = this.deleteConfirmCategoryId();
+    if (!id) return;
+
+    this.categoryError.set(null);
+    this.api.deleteCategory(id).subscribe({
+      next: () => {
+        this.categories.update((categories) => categories.filter((c) => c.id !== id));
+        this.deleteConfirmCategoryId.set(null);
+      },
+      error: (err) => {
+        console.error('Category delete error:', err);
+        this.categoryError.set(this.problemDetail(err, 'Failed to delete category.'));
+        this.deleteConfirmCategoryId.set(null);
+      },
+    });
+  }
+
   setBookingFilter(status: BookingStatus | 'ALL'): void {
     this.bookingFilter.set(status);
   }
@@ -331,6 +452,14 @@ export class AdminCmsComponent implements OnInit {
         }
       },
     });
+  }
+
+  private problemDetail(err: any, fallback: string): string {
+    if (err?.status === 401 || err?.status === 403) {
+      return 'Authentication failed. Please sign in again.';
+    }
+    const problem = err?.error;
+    return problem?.detail || problem?.title || fallback;
   }
 
   private slugify(text: string): string {

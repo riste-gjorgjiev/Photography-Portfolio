@@ -2,7 +2,7 @@ import {inject, Injectable} from '@angular/core';
 import {HttpClient, HttpHeaders, HttpParams} from '@angular/common/http';
 import {
   BookingInquiryRequest, BookingInquiryResponse, BookingStatus,
-  CategoryResponse, CreateEventAlbumRequest,
+  CategoryResponse, CreateCategoryRequest, CreateEventAlbumRequest,
   EventAlbumResponse,
   PhotoResponse, PhotoUploadRequest,
   TimeOfDay
@@ -74,9 +74,31 @@ export class PortfolioApiService {
     );
   }
 
+  createCategory(request: CreateCategoryRequest): Observable<CategoryResponse> {
+    return this.http.post<CategoryResponse>(
+      `${this.baseUrl}/admin/categories`,
+      request,
+      { headers: this.adminHeaders },
+    );
+  }
+
   deletePhoto(id: string): Observable<void> {
     return this.http.delete<void>(
       `${this.baseUrl}/admin/photos/${encodeURIComponent(id)}`,
+      { headers: this.adminHeaders },
+    );
+  }
+
+  deleteAlbum(id: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/admin/albums/${encodeURIComponent(id)}`,
+      { headers: this.adminHeaders },
+    );
+  }
+
+  deleteCategory(id: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/admin/categories/${encodeURIComponent(id)}`,
       { headers: this.adminHeaders },
     );
   }
