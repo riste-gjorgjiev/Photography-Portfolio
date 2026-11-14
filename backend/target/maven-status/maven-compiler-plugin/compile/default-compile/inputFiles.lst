@@ -30,4 +30,5 @@
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/main/java/com/portfolio/photography/service/BookingService.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/main/java/com/portfolio/photography/service/CloudinaryService.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/main/java/com/portfolio/photography/service/ImageAnalysisService.java
+/home/riste/IdeaProjects/Photography-Portfolio/backend/src/main/java/com/portfolio/photography/service/ImageOptimizationService.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/main/java/com/portfolio/photography/service/PortfolioService.java

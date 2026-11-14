@@ -4,3 +4,4 @@ com/portfolio/photography/config/CorsConfigurationTest.class
 com/portfolio/photography/service/ImageAnalysisServiceTest.class
 com/portfolio/photography/service/CloudinaryServiceTest.class
 com/portfolio/photography/controller/PublicPortfolioControllerTest.class
+com/portfolio/photography/service/ImageOptimizationServiceTest.class

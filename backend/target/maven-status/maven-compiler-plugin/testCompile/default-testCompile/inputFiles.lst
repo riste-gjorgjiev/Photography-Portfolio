@@ -4,3 +4,4 @@
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/test/java/com/portfolio/photography/exception/GlobalExceptionHandlerTest.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/test/java/com/portfolio/photography/service/CloudinaryServiceTest.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/test/java/com/portfolio/photography/service/ImageAnalysisServiceTest.java
+/home/riste/IdeaProjects/Photography-Portfolio/backend/src/test/java/com/portfolio/photography/service/ImageOptimizationServiceTest.java

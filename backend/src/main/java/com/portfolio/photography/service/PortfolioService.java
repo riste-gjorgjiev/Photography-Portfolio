@@ -5,6 +5,7 @@ import com.portfolio.photography.domain.entity.EventAlbum;
 import com.portfolio.photography.domain.entity.Photo;
 import com.portfolio.photography.dto.*;
 import com.portfolio.photography.exception.ConflictException;
+import com.portfolio.photography.exception.ExternalServiceException;
 import com.portfolio.photography.exception.ResourceNotFoundException;
 import com.portfolio.photography.repository.CategoryRepository;
 import com.portfolio.photography.repository.EventAlbumRepositiry;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -28,6 +30,7 @@ public class PortfolioService {
     private final PhotoRepository photoRepository;
     private final PortfolioMapper mapper;
     private final ImageAnalysisService imageAnalysisService;
+    private final ImageOptimizationService imageOptimizationService;
     private final CloudinaryService cloudinaryService;
 
     public List<CategoryResponse> getCategories(String timeOfDay) {
@@ -98,9 +101,24 @@ public class PortfolioService {
         }
 
         String fallbackHex = category.getDefaultAmbientHex();
-        ImageAnalysisService.AnalyzedImageMetadata analysis = imageAnalysisService.analyze(file, fallbackHex);
 
-        CloudinaryService.UploadResult uploadResult = cloudinaryService.uploadPhoto(file, category.getSlug());
+        byte[] originalBytes;
+        try {
+            originalBytes = file.getBytes();
+        } catch (IOException e) {
+            throw new ExternalServiceException("Could not read the uploaded file", e);
+        }
+
+        ImageAnalysisService.AnalyzedImageMetadata analysis =
+                imageAnalysisService.analyze(originalBytes, file.getOriginalFilename(), fallbackHex);
+
+        // Cloudinary's free plan rejects assets over 10 MiB, so shrink oversized
+        // photos to a web-friendly size before uploading.
+        ImageOptimizationService.OptimizedImage optimized = imageOptimizationService.optimize(
+                originalBytes, file.getContentType(), file.getOriginalFilename());
+
+        CloudinaryService.UploadResult uploadResult = cloudinaryService.uploadPhoto(
+                optimized.bytes(), optimized.contentType(), optimized.filename(), category.getSlug());
 
         com.portfolio.photography.domain.enums.TimeOfDay timeOfDay = request.timeOfDayOverride() != null
                 ? request.timeOfDayOverride()

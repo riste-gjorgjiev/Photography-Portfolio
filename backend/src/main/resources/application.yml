@@ -47,6 +47,12 @@ management:
       show-details: when-authorized
 
 portfolio:
+  upload:
+    # Cloudinary's free plan rejects assets above 10 MiB (10485760 bytes).
+    # Keep a safety margin so the re-encoded JPEG always fits.
+    max-dimension: ${UPLOAD_MAX_DIMENSION:3200}
+    jpeg-quality: ${UPLOAD_JPEG_QUALITY:0.9}
+    max-bytes: ${UPLOAD_MAX_BYTES:9437184}
   cloudinary:
     cloud-name: ${CLOUDINARY_CLOUD_NAME:demo}
     api-key: ${CLOUDINARY_API_KEY:demo-key}

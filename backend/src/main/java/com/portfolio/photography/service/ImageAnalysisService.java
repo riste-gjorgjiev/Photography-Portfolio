@@ -42,6 +42,17 @@ public class ImageAnalysisService {
     ) {}
 
     public AnalyzedImageMetadata analyze(MultipartFile file, String fallbackHex) {
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+        } catch (Exception e) {
+            log.error("Failed reading bytes from uploaded file {}", file.getOriginalFilename(), e);
+            bytes = new byte[0];
+        }
+        return analyze(bytes, file.getOriginalFilename(), fallbackHex);
+    }
+
+    public AnalyzedImageMetadata analyze(byte[] bytes, String originalFilename, String fallbackHex) {
         String defaultPrimary = (fallbackHex != null && fallbackHex.matches("^#[0-9A-Fa-f]{6}$"))
                 ? fallbackHex : "#3B82F6";
         String defaultSecondary = "#1D4ED8";
@@ -60,8 +71,6 @@ public class ImageAnalysisService {
         Instant capturedAt = null;
 
         try {
-            byte[] bytes = file.getBytes();
-
             try (ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
                 Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
                 if (readers.hasNext()) {
@@ -88,7 +97,7 @@ public class ImageAnalysisService {
                     }
                 }
             } catch (Exception e) {
-                log.warn("Ambient color extraction skipped for {}: {}", file.getOriginalFilename(), e.getMessage());
+                log.warn("Ambient color extraction skipped for {}: {}", originalFilename, e.getMessage());
             }
 
             try (InputStream metaStream = new ByteArrayInputStream(bytes)) {
@@ -133,11 +142,11 @@ public class ImageAnalysisService {
                     }
                 }
             } catch (Exception e) {
-                log.warn("EXIF metadata parsing skipped for {}: {}", file.getOriginalFilename(), e.getMessage());
+                log.warn("EXIF metadata parsing skipped for {}: {}", originalFilename, e.getMessage());
             }
 
         } catch (Exception e) {
-            log.error("Failed reading bytes from uploaded file {}", file.getOriginalFilename(), e);
+            log.error("Failed reading bytes from uploaded file {}", originalFilename, e);
         }
 
         return new AnalyzedImageMetadata(

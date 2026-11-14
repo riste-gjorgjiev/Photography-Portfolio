@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
@@ -26,16 +27,22 @@ public class CloudinaryService {
     public record UploadResult(String publicId, String secureUrl) {}
 
     public UploadResult uploadPhoto(MultipartFile file, String categorySlug) {
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+        } catch (IOException e) {
+            throw new ExternalServiceException("Could not read the uploaded file", e);
+        }
+        return uploadPhoto(bytes, file.getContentType(), file.getOriginalFilename(), categorySlug);
+    }
+
+    public UploadResult uploadPhoto(byte[] bytes, String contentType, String filename, String categorySlug) {
         if ("demo".equalsIgnoreCase(cloudName)) {
-            try {
-                log.info("Cloudinary cloud-name is 'demo'; using local data-URI fallback for {}", file.getOriginalFilename());
-                String mimeType = file.getContentType() != null ? file.getContentType() : "image/jpeg";
-                String base64 = Base64.getEncoder().encodeToString(file.getBytes());
-                String dataUri = "data:" + mimeType + ";base64," + base64;
-                return new UploadResult("local-" + UUID.randomUUID(), dataUri);
-            } catch (Exception e) {
-                throw new ExternalServiceException("Could not read the uploaded file", e);
-            }
+            log.info("Cloudinary cloud-name is 'demo'; using local data-URI fallback for {}", filename);
+            String mimeType = contentType != null ? contentType : "image/jpeg";
+            String base64 = Base64.getEncoder().encodeToString(bytes);
+            String dataUri = "data:" + mimeType + ";base64," + base64;
+            return new UploadResult("local-" + UUID.randomUUID(), dataUri);
         }
 
         try {
@@ -45,7 +52,7 @@ public class CloudinaryService {
             String publicId = "portfolio/" + categorySlug + "/" + UUID.randomUUID();
             @SuppressWarnings("unchecked")
             Map<String, Object> uploadResult = cloudinary.uploader().uploadLarge(
-                    file.getBytes(),
+                    bytes,
                     ObjectUtils.asMap(
                             "public_id", publicId,
                             "resource_type", "image",
@@ -58,7 +65,7 @@ public class CloudinaryService {
             return new UploadResult(resultPublicId, secureUrl);
         } catch (Exception e) {
             log.error("Cloudinary upload failed for {} (cloud-name: {}, folder: portfolio/{})",
-                    file.getOriginalFilename(), cloudName, categorySlug, e);
+                    filename, cloudName, categorySlug, e);
             throw new ExternalServiceException(
                     "Image storage upload failed: " + abbreviate(e.getMessage(), 300), e);
         }
