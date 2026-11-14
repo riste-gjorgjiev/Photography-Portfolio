@@ -41,6 +41,7 @@ public class CloudinaryService {
         try {
             // uploadLarge() sends the file in chunked requests: Cloudinary's plain
             // upload() API rejects anything over 10 MB (and silently ignores chunk_size).
+            // Each part must be a multiple of 5 MiB and larger than 5 MiB, hence 10 MiB.
             String publicId = "portfolio/" + categorySlug + "/" + UUID.randomUUID();
             @SuppressWarnings("unchecked")
             Map<String, Object> uploadResult = cloudinary.uploader().uploadLarge(
@@ -48,7 +49,7 @@ public class CloudinaryService {
                     ObjectUtils.asMap(
                             "public_id", publicId,
                             "resource_type", "image",
-                            "chunk_size", 5_000_000
+                            "chunk_size", 10 * 1024 * 1024
                     )
             );
 
