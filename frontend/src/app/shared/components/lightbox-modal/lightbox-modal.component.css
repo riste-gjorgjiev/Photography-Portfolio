@@ -9,3 +9,55 @@
 .exif-value {
   @apply text-xs font-mono text-white/80;
 }
+
+.lightbox-stage {
+  padding: 1rem;
+  transition: padding-bottom 0.3s ease;
+}
+
+.lightbox-counter {
+  bottom: 1rem;
+  transition: bottom 0.3s ease;
+}
+
+.lightbox-nav {
+  top: 50%;
+  transition: top 0.3s ease;
+}
+
+@media (min-width: 640px) {
+  .lightbox-stage {
+    padding: 2rem;
+  }
+}
+
+/*
+ * Mobile: the metadata panel is a bottom sheet. The stage reserves the sheet's
+ * height so the image is never covered, and the floating controls move with it.
+ */
+@media (max-width: 639px) {
+  .lightbox-stage-sheet-open {
+    padding-bottom: 55vh;
+  }
+
+  .lightbox-counter-sheet-open {
+    bottom: calc(55vh + 0.75rem);
+  }
+
+  .lightbox-nav-sheet-open {
+    top: calc((100vh - 55vh) / 2 + 0.5rem);
+  }
+
+  .lightbox-sheet {
+    animation: lightbox-sheet-in 0.28s ease-out;
+  }
+}
+
+@keyframes lightbox-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}

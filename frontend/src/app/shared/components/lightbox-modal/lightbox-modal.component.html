@@ -3,21 +3,27 @@
   class="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex"
   (click)="onClose()"
 >
-  <div class="flex-1 flex items-center justify-center relative p-4 sm:p-8" (click)="$event.stopPropagation()">
+  <div
+    class="lightbox-stage flex-1 min-h-0 flex items-center justify-center relative"
+    [class.lightbox-stage-sheet-open]="sidebarOpen()"
+    (click)="$event.stopPropagation()"
+  >
     <button
       (click)="onClose()"
       class="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full
              bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
       title="Close (Escape)"
+      aria-label="Close lightbox"
     >
       <app-icon name="x" [size]="20" />
     </button>
 
     <button
       (click)="toggleSidebar()"
-      class="absolute top-4 left-4 z-10 w-10 h-10 flex items-center justify-center rounded-full
+      class="absolute top-4 right-16 z-10 w-10 h-10 flex items-center justify-center rounded-full
              bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors sm:hidden"
       title="Toggle Info Panel"
+      aria-label="Toggle photo info panel"
     >
       <app-icon name="info" [size]="20" />
     </button>
@@ -25,9 +31,11 @@
     @if (hasPrev()) {
       <button
         (click)="goToPrev()"
-        class="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 flex items-center justify-center
+        class="lightbox-nav absolute left-4 -translate-y-1/2 z-10 w-12 h-12 flex items-center justify-center
                rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
+        [class.lightbox-nav-sheet-open]="sidebarOpen()"
         title="Previous photo"
+        aria-label="Previous photo"
       >
         <app-icon name="chevron-left" [size]="28" />
       </button>
@@ -36,52 +44,66 @@
     @if (hasNext()) {
       <button
         (click)="goToNext()"
-        class="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 flex items-center justify-center
+        class="lightbox-nav absolute right-4 -translate-y-1/2 z-10 w-12 h-12 flex items-center justify-center
                rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
-        [class.hidden]="sidebarOpen()"
-        [class.sm:right-4]="!sidebarOpen()"
+        [class.lightbox-nav-sheet-open]="sidebarOpen()"
         title="Next photo"
+        aria-label="Next photo"
       >
         <app-icon name="chevron-right" [size]="28" />
       </button>
     }
 
-    <div class="max-w-full max-h-full flex items-center justify-center">
-      <!--
-        FIX: `@for` over a single-item array with `track p.id` forces Angular to
-        destroy and recreate the <img> whenever the active photo changes.
-        Without this, NgOptimizedImage reused the same <img> element and did not
-        swap the source on arrow-key navigation (counter/text updated, image stayed).
-      -->
-      @for (p of [photo()]; track p.id) {
-        @if (p.imageUrl.startsWith('data:')) {
-          <img
-            [src]="p.imageUrl"
-            [alt]="p.title || 'Portfolio photo'"
-            class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
-          />
-        } @else {
-          <img
-            [ngSrc]="p.imageUrl"
-            [width]="p.width"
-            [height]="p.height"
-            [alt]="p.title || 'Portfolio photo'"
-            class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
-          />
-        }
+    <!--
+      FIX: `@for` over a single-item array with `track p.id` forces Angular to
+      destroy and recreate the <img> whenever the active photo changes.
+      Without this, NgOptimizedImage reused the same <img> element and did not
+      swap the source on arrow-key navigation (counter/text updated, image stayed).
+    -->
+    @for (p of [photo()]; track p.id) {
+      @if (p.imageUrl.startsWith('data:')) {
+        <img
+          [src]="p.imageUrl"
+          [alt]="p.title || 'Portfolio photo'"
+          class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+        />
+      } @else {
+        <img
+          [ngSrc]="p.imageUrl"
+          [width]="p.width"
+          [height]="p.height"
+          [alt]="p.title || 'Portfolio photo'"
+          class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+        />
       }
-    </div>
+    }
 
-    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm text-xs font-mono text-white/60">
+    <div
+      class="lightbox-counter absolute left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm text-xs font-mono text-white/60"
+      [class.lightbox-counter-sheet-open]="sidebarOpen()"
+    >
       {{ currentIndex() + 1 }} / {{ allPhotos().length }}
     </div>
   </div>
 
   @if (sidebarOpen()) {
     <aside
-      class="w-full sm:w-96 bg-black/80 backdrop-blur-md border-l border-white/10 overflow-y-auto flex flex-col"
+      class="lightbox-sheet fixed inset-x-0 bottom-0 z-20 w-full h-[55vh]
+             rounded-t-2xl border-t border-white/10 bg-black/90 backdrop-blur-md flex flex-col overflow-hidden
+             sm:static sm:inset-auto sm:z-auto sm:h-auto sm:max-h-none sm:w-96 sm:rounded-none
+             sm:border-t-0 sm:border-l sm:bg-black/80 sm:overflow-visible"
       (click)="$event.stopPropagation()"
+      aria-label="Photo metadata"
     >
+      <button
+        type="button"
+        (click)="toggleSidebar()"
+        class="sm:hidden flex items-center justify-center w-full py-2 shrink-0"
+        aria-label="Close info panel"
+      >
+        <span class="w-10 h-1 rounded-full bg-white/25"></span>
+      </button>
+
       <div class="p-4 border-b border-white/10">
         <h2 class="text-lg font-semibold text-white/90 line-clamp-2">
           {{ photo().title || 'Untitled' }}
@@ -122,7 +144,7 @@
         </button>
       </div>
 
-      <div class="flex-1 p-4 overflow-y-auto">
+      <div class="flex-1 min-h-0 p-4 overflow-y-auto overscroll-contain">
         @switch (activeTab()) {
           @case ('telemetry') {
             <div class="space-y-4">

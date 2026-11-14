@@ -34,7 +34,9 @@ export class LightboxModalComponent {
 
   readonly activeTab = signal<'telemetry' | 'inspector'>('telemetry');
 
-  readonly sidebarOpen = signal(true);
+  private readonly isDesktop = signal(this.prefersDesktop());
+
+  readonly sidebarOpen = signal(this.prefersDesktop());
 
   readonly copiedHex = signal<string | null>(null);
 
@@ -56,6 +58,18 @@ export class LightboxModalComponent {
     });
   }
 
+
+  @HostListener('window:resize')
+  handleResize(): void {
+    const desktop = this.prefersDesktop();
+    if (desktop === this.isDesktop()) return;
+    this.isDesktop.set(desktop);
+    this.sidebarOpen.set(desktop);
+  }
+
+  private prefersDesktop(): boolean {
+    return typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches;
+  }
 
   @HostListener('window:keydown', ['$event'])
   handleKeydown(event: KeyboardEvent): void {
