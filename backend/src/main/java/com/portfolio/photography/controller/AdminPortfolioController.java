@@ -37,9 +37,27 @@ public class AdminPortfolioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(portfolioService.createAlbum(request));
     }
 
+    @PostMapping("/categories")
+    public ResponseEntity<CategoryResponse> createCategory(
+            @Valid @RequestBody CreateCategoryRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(portfolioService.createCategory(request));
+    }
+
     @DeleteMapping("/photos/{id}")
     public ResponseEntity<Void> deletePhoto(@PathVariable UUID id) {
         portfolioService.deletePhoto(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/albums/{id}")
+    public ResponseEntity<Void> deleteAlbum(@PathVariable UUID id) {
+        portfolioService.deleteAlbum(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/categories/{id}")
+    public ResponseEntity<Void> deleteCategory(@PathVariable UUID id) {
+        portfolioService.deleteCategory(id);
         return ResponseEntity.noContent().build();
     }
 

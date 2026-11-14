@@ -12,6 +12,8 @@ import java.util.UUID;
 
 public interface PhotoRepository extends JpaRepository<Photo, UUID> {
 
+    boolean existsByCategoryId(UUID categoryId);
+
     @Query("""
             SELECT p FROM Photo p
             JOIN FETCH p.category c

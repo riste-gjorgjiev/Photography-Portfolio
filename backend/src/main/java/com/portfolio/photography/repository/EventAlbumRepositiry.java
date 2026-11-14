@@ -13,6 +13,8 @@ import java.util.UUID;
 
 public interface EventAlbumRepositiry extends JpaRepository<EventAlbum, UUID> {
 
+    boolean existsByCategoryId(UUID categoryId);
+
     @Query("""
             SELECT a FROM EventAlbum a
             JOIN FETCH a.category c

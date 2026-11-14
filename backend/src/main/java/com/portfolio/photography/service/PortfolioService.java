@@ -4,6 +4,7 @@ import com.portfolio.photography.domain.entity.Category;
 import com.portfolio.photography.domain.entity.EventAlbum;
 import com.portfolio.photography.domain.entity.Photo;
 import com.portfolio.photography.dto.*;
+import com.portfolio.photography.exception.ConflictException;
 import com.portfolio.photography.exception.ResourceNotFoundException;
 import com.portfolio.photography.repository.CategoryRepository;
 import com.portfolio.photography.repository.EventAlbumRepositiry;
@@ -15,6 +16,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -145,7 +148,43 @@ public class PortfolioService {
         return mapper.toEventAlbumResponse(saved);
     }
 
-    public void deletePhoto(java.util.UUID id) {
+    public CategoryResponse createCategory(CreateCategoryRequest request) {
+        String slug = request.slug().trim().toLowerCase(Locale.ROOT);
+        if (categoryRepository.existsBySlug(slug)) {
+            throw new ConflictException("A category with slug '" + slug + "' already exists");
+        }
+
+        Category category = Category.builder()
+                .name(request.name().trim())
+                .slug(slug)
+                .description(request.description())
+                .timeOfDay(request.timeOfDay())
+                .defaultAmbientHex(request.defaultAmbientHex() != null ? request.defaultAmbientHex() : "#1E293B")
+                .displayOrder(request.displayOrder() != null ? request.displayOrder() : 0)
+                .build();
+
+        return mapper.toCategoryResponse(categoryRepository.save(category));
+    }
+
+    public void deleteCategory(UUID id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Category", "id", id));
+
+        if (photoRepository.existsByCategoryId(id) || eventAlbumRepository.existsByCategoryId(id)) {
+            throw new ConflictException(
+                    "Category '" + category.getName() + "' still contains photos or albums. Remove or move them first.");
+        }
+
+        categoryRepository.delete(category);
+    }
+
+    public void deleteAlbum(UUID id) {
+        EventAlbum album = eventAlbumRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("EventAlbum", "id", id));
+        eventAlbumRepository.delete(album);
+    }
+
+    public void deletePhoto(UUID id) {
         Photo photo = photoRepository.findByIdWithAssociations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Photo", "id", id));
         cloudinaryService.deletePhoto(photo.getCloudinaryPublicId());
