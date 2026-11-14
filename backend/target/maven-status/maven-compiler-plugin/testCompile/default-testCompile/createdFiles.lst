@@ -1,3 +1,4 @@
 com/portfolio/photography/controller/AdminPortfolioControllerTest.class
+com/portfolio/photography/config/CorsConfigurationTest.class
 com/portfolio/photography/service/ImageAnalysisServiceTest.class
 com/portfolio/photography/controller/PublicPortfolioControllerTest.class

@@ -52,4 +52,4 @@ portfolio:
     api-key: ${CLOUDINARY_API_KEY:demo-key}
     api-secret: ${CLOUDINARY_API_SECRET:demo-secret}
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,https://riste-gjorgjiev.dev,https://www.riste-gjorgjiev.dev,https://photos.riste-gjorgjiev.dev}
