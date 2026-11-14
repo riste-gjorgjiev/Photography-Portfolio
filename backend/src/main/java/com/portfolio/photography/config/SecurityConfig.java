@@ -12,13 +12,24 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${portfolio.cors.allowed-origins}")
+    private static final List<String> BUILT_IN_ORIGIN_PATTERNS = List.of(
+            "http://localhost:4200",
+            "http://localhost",
+            "https://riste-gjorgjiev.dev",
+            "https://www.riste-gjorgjiev.dev",
+            "https://*.riste-gjorgjiev.dev"
+    );
+
+    @Value("${portfolio.cors.allowed-origins:http://localhost:4200}")
     private String allowedOrigins;
 
     @Bean
@@ -41,8 +52,14 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        Set<String> originPatterns = new LinkedHashSet<>(BUILT_IN_ORIGIN_PATTERNS);
+        Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .forEach(originPatterns::add);
+
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(allowedOrigins.split(",")));
+        config.setAllowedOriginPatterns(List.copyOf(originPatterns));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
