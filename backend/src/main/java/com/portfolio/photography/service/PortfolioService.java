@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -81,7 +80,14 @@ public class PortfolioService {
                 .toList();
     }
 
-    public PhotoResponse uploadPhoto(MultipartFile file, PhotoUploadRequest request) throws IOException {
+    public PhotoResponse uploadPhoto(MultipartFile file, PhotoUploadRequest request) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Uploaded file is empty");
+        }
+        if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+            throw new IllegalArgumentException("Only image uploads are allowed");
+        }
+
         Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", request.categoryId()));
 

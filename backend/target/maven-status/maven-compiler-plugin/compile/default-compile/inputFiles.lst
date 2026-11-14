@@ -20,6 +20,7 @@
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/main/java/com/portfolio/photography/dto/PhotoUploadRequest.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/main/java/com/portfolio/photography/dto/PortfolioMapper.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/main/java/com/portfolio/photography/exception/ConflictException.java
+/home/riste/IdeaProjects/Photography-Portfolio/backend/src/main/java/com/portfolio/photography/exception/ExternalServiceException.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/main/java/com/portfolio/photography/exception/GlobalExceptionHandler.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/main/java/com/portfolio/photography/exception/ResourceNotFoundException.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/main/java/com/portfolio/photography/repository/BookingInquiryRepository.java

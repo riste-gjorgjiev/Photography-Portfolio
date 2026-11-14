@@ -1,4 +1,6 @@
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/test/java/com/portfolio/photography/config/CorsConfigurationTest.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/test/java/com/portfolio/photography/controller/AdminPortfolioControllerTest.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/test/java/com/portfolio/photography/controller/PublicPortfolioControllerTest.java
+/home/riste/IdeaProjects/Photography-Portfolio/backend/src/test/java/com/portfolio/photography/exception/GlobalExceptionHandlerTest.java
+/home/riste/IdeaProjects/Photography-Portfolio/backend/src/test/java/com/portfolio/photography/service/CloudinaryServiceTest.java
 /home/riste/IdeaProjects/Photography-Portfolio/backend/src/test/java/com/portfolio/photography/service/ImageAnalysisServiceTest.java

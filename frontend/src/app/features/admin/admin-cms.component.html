@@ -78,9 +78,61 @@
           (drop)="onFileDrop($event)"
           class="relative rounded-2xl border-2 border-dashed border-white/15 bg-white/[0.02] p-8 text-center transition-colors hover:border-white/25 hover:bg-white/[0.04]"
         >
-          @if (localPreviewUrl(); as preview) {
+          @if (isBulkMode()) {
+            <div class="text-left space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono text-white/60">
+                  {{ bulkTotal() }} images in queue
+                </span>
+                <button
+                  type="button"
+                  (click)="clearQueue()"
+                  [disabled]="uploading()"
+                  class="inline-flex items-center gap-1 text-[10px] font-mono text-red-400/60 hover:text-red-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <app-icon name="x" [size]="12" />
+                  Clear all
+                </button>
+              </div>
+              <div class="max-h-64 overflow-y-auto rounded-lg border border-white/10 divide-y divide-white/5 bg-white/[0.02]">
+                @for (entry of queue(); track entry.thumbUrl; let idx = $index) {
+                  <div class="flex items-center gap-3 px-3 py-2">
+                    <img [src]="entry.thumbUrl" alt="" class="w-8 h-8 rounded object-cover shrink-0" />
+                    <span class="flex-1 truncate text-xs font-mono text-white/70">{{ entry.file.name }}</span>
+                    <span class="text-[10px] font-mono text-white/40 shrink-0">
+                      {{ (entry.file.size / 1048576).toFixed(2) }} MB
+                    </span>
+                    <span class="w-4 flex justify-center shrink-0">
+                      @switch (entry.status) {
+                        @case ('pending') { <app-icon name="circle" [size]="12" class="text-white/25" /> }
+                        @case ('uploading') { <span class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> }
+                        @case ('done') { <app-icon name="check" [size]="14" class="text-emerald-400" /> }
+                        @case ('failed') { <app-icon name="triangle-alert" [size]="14" class="text-red-400" /> }
+                      }
+                    </span>
+                    @if (!uploading() && entry.status !== 'uploading') {
+                      <button
+                        type="button"
+                        (click)="removeQueueEntry(idx)"
+                        class="text-white/25 hover:text-red-400 transition-colors shrink-0"
+                        title="Remove from queue"
+                      >
+                        <app-icon name="x" [size]="12" />
+                      </button>
+                    }
+                  </div>
+                  @if (entry.error) {
+                    <div class="px-3 pb-2 text-[10px] font-mono text-red-400/70">{{ entry.error }}</div>
+                  }
+                }
+              </div>
+              <p class="text-[10px] font-mono text-white/30">
+                Caption, category, album &amp; time of day apply to every photo; display order increments by 1.
+              </p>
+            </div>
+          } @else if (localPreviewUrl()) {
             <div class="space-y-3">
-              <img [src]="preview" alt="Preview" class="max-h-48 mx-auto rounded-lg shadow-lg" />
+              <img [src]="localPreviewUrl()" alt="Preview" class="max-h-48 mx-auto rounded-lg shadow-lg" />
               <div class="flex items-center justify-center gap-2">
                 <span class="text-xs font-mono text-white/60">{{ selectedFile()?.name }}</span>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-white/10 text-white/50">
@@ -99,11 +151,17 @@
           } @else {
             <div class="space-y-2">
               <app-icon name="upload" [size]="32" class="text-white/20" />
-              <p class="text-sm text-white/40">Drag &amp; drop an image here</p>
-              <label class="inline-block px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-xs font-mono text-white/60 cursor-pointer hover:bg-white/15 transition-colors">
-                Browse Files
-                <input type="file" accept="image/*" class="hidden" (change)="onFileInput($event)" />
-              </label>
+              <p class="text-sm text-white/40">Drag &amp; drop images or whole folders here</p>
+              <div class="flex items-center justify-center gap-2 pt-1">
+                <label class="inline-block px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-xs font-mono text-white/60 cursor-pointer hover:bg-white/15 transition-colors">
+                  Browse Files
+                  <input type="file" accept="image/*" multiple class="hidden" (change)="onFileInput($event)" />
+                </label>
+                <label class="inline-block px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-xs font-mono text-white/60 cursor-pointer hover:bg-white/15 transition-colors">
+                  Browse Folder
+                  <input type="file" accept="image/*" webkitdirectory directory class="hidden" (change)="onFileInput($event)" />
+                </label>
+              </div>
             </div>
           }
         </div>
@@ -111,15 +169,17 @@
         <!-- Metadata Form -->
         <form [formGroup]="photoForm" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[10px] font-mono text-white/40 mb-1">Title</label>
-              <input
-                formControlName="title"
-                type="text"
-                placeholder="Photo title"
-                class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
-              />
-            </div>
+            @if (!isBulkMode()) {
+              <div>
+                <label class="block text-[10px] font-mono text-white/40 mb-1">Title</label>
+                <input
+                  formControlName="title"
+                  type="text"
+                  placeholder="Photo title"
+                  class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+                />
+              </div>
+            }
             <div>
               <label class="block text-[10px] font-mono text-white/40 mb-1">Category *</label>
               <select
@@ -142,7 +202,10 @@
           </div>
 
           <div>
-            <label class="block text-[10px] font-mono text-white/40 mb-1">Caption</label>
+            <label class="block text-[10px] font-mono text-white/40 mb-1">
+              Caption
+              @if (isBulkMode()) { <span class="text-white/25">(applied to all)</span> }
+            </label>
             <textarea
               formControlName="caption"
               rows="2"
@@ -192,9 +255,11 @@
                 class="w-4 h-4 rounded border-white/20 bg-white/5 text-purple-500 focus:ring-purple-500/25 focus:ring-offset-0"
               />
               <span class="text-xs font-mono text-white/60">Featured</span>
+              @if (isBulkMode()) { <span class="text-[10px] font-mono text-white/30">(first photo)</span> }
             </label>
             <div class="flex items-center gap-2">
               <label class="text-[10px] font-mono text-white/40">Order</label>
+              @if (isBulkMode()) { <span class="text-[10px] font-mono text-white/30">(+1 each)</span> }
               <input
                 formControlName="displayOrder"
                 type="number"
@@ -209,24 +274,37 @@
               {{ err }}
             </div>
           }
+          @if (bulkSummary(); as summary) {
+            <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+              {{ summary }}
+            </div>
+          }
 
           <button
             type="button"
-            (click)="uploadPhoto()"
-            [disabled]="!selectedFile() || photoForm.invalid || uploading()"
+            (click)="isBulkMode() ? uploadBulk() : uploadPhoto()"
+            [disabled]="queue().length === 0 || photoForm.invalid || uploading()"
             class="w-full px-6 py-3 rounded-lg text-sm font-semibold bg-gradient-to-r from-purple-600 to-blue-600 text-white transition-all duration-300"
-            [class]="!selectedFile() || photoForm.invalid || uploading()
+            [class]="queue().length === 0 || photoForm.invalid || uploading()
               ? 'opacity-40 cursor-not-allowed'
               : 'hover:shadow-lg hover:shadow-purple-500/20'"
           >
             @if (uploading()) {
               <span class="flex items-center justify-center gap-2">
                 <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                Analyzing EXIF &amp; Uploading...
+                @if (isBulkMode()) {
+                  Uploading {{ bulkCompleted() }} / {{ bulkTotal() }}...
+                } @else {
+                  Analyzing EXIF &amp; Uploading...
+                }
               </span>
             } @else {
               <span class="inline-flex items-center justify-center gap-2">
-                Upload &amp; Analyze
+                @if (isBulkMode()) {
+                  Upload {{ bulkTotal() }} photos
+                } @else {
+                  Upload &amp; Analyze
+                }
                 <app-icon name="arrow-right" [size]="16" />
               </span>
             }

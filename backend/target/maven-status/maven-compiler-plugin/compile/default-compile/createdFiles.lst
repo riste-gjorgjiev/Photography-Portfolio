@@ -1,3 +1,4 @@
+com/portfolio/photography/exception/ExternalServiceException.class
 com/portfolio/photography/service/BookingService.class
 com/portfolio/photography/service/PortfolioService.class
 com/portfolio/photography/controller/PublicPortfolioController.class

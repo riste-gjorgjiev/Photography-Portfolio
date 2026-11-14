@@ -1,5 +1,6 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import {
   FormBuilder,
   ReactiveFormsModule,
@@ -24,6 +25,17 @@ import { UiIconComponent } from '../../shared/components/ui-icon/ui-icon.compone
 
 type AdminTab = 'photos' | 'albums' | 'categories' | 'bookings';
 
+type QueueItemStatus = 'pending' | 'uploading' | 'done' | 'failed';
+
+interface QueueEntry {
+  file: File;
+  status: QueueItemStatus;
+  error: string | null;
+  thumbUrl: string;
+}
+
+const MAX_UPLOAD_SIZE_BYTES = 25 * 1024 * 1024;
+
 @Component({
   selector: 'app-admin-cms',
   standalone: true,
@@ -45,11 +57,22 @@ export class AdminCmsComponent implements OnInit {
   readonly allPhotos = signal<PhotoResponse[]>([]);
   readonly bookings = signal<BookingInquiryResponse[]>([]);
 
-  readonly selectedFile = signal<File | null>(null);
+  readonly queue = signal<QueueEntry[]>([]);
   readonly localPreviewUrl = signal<string | null>(null);
   readonly uploading = signal(false);
   readonly lastUploadedPhoto = signal<PhotoResponse | null>(null);
   readonly uploadError = signal<string | null>(null);
+  readonly bulkSummary = signal<string | null>(null);
+
+  readonly selectedFile = computed(() =>
+    this.queue().length === 1 ? this.queue()[0].file : null,
+  );
+
+  readonly isBulkMode = computed(() => this.queue().length > 1);
+  readonly bulkTotal = computed(() => this.queue().length);
+  readonly bulkCompleted = computed(() =>
+    this.queue().filter((e) => e.status === 'done' || e.status === 'failed').length,
+  );
   readonly deleteConfirmId = signal<string | null>(null);
 
   readonly albumSubmitting = signal(false);
@@ -165,38 +188,146 @@ export class AdminCmsComponent implements OnInit {
 
   onFileDrop(event: DragEvent): void {
     event.preventDefault();
-    const files = event.dataTransfer?.files;
-    if (files && files.length > 0) {
-      this.selectFile(files[0]);
+    const items = event.dataTransfer?.items;
+    if (!items || items.length === 0) return;
+
+    const files: File[] = [];
+    const entries: FileSystemEntry[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind !== 'file') continue;
+      const entry = item.webkitGetAsEntry?.();
+      if (entry) {
+        entries.push(entry);
+      } else {
+        const file = item.getAsFile();
+        if (file) files.push(file);
+      }
+    }
+
+    if (entries.length > 0) {
+      this.collectFilesFromEntries(entries).then((collected) =>
+        this.addFiles([...files, ...collected]),
+      );
+    } else {
+      this.addFiles(files);
     }
   }
 
   onFileInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.selectFile(input.files[0]);
+      this.addFiles(Array.from(input.files));
     }
+    input.value = '';
   }
 
-  private selectFile(file: File): void {
-    if (!file.type.startsWith('image/')) return;
-    this.selectedFile.set(file);
-    this.lastUploadedPhoto.set(null);
-    this.uploadError.set(null);
+  private async collectFilesFromEntries(entries: FileSystemEntry[]): Promise<File[]> {
+    const files: File[] = [];
+    for (const entry of entries) {
+      if (entry.isFile) {
+        files.push(
+          await new Promise<File>((resolve, reject) =>
+            (entry as FileSystemFileEntry).file(resolve, reject),
+          ),
+        );
+      } else if (entry.isDirectory) {
+        files.push(...(await this.collectFilesFromDirectory(entry as FileSystemDirectoryEntry)));
+      }
+    }
+    return files;
+  }
 
-    const reader = new FileReader();
-    reader.onload = () => this.localPreviewUrl.set(reader.result as string);
-    reader.readAsDataURL(file);
+  private async collectFilesFromDirectory(dir: FileSystemDirectoryEntry): Promise<File[]> {
+    const reader = dir.createReader();
+    const children: FileSystemEntry[] = [];
+    let batch: FileSystemEntry[];
+    do {
+      batch = await new Promise<FileSystemEntry[]>((resolve, reject) =>
+        reader.readEntries(resolve, reject),
+      );
+      children.push(...batch);
+    } while (batch.length > 0);
+    return this.collectFilesFromEntries(children);
+  }
+
+  private addFiles(files: File[]): void {
+    if (this.uploading()) return;
+
+    const existingKeys = new Set(this.queue().map((e) => `${e.file.name}:${e.file.size}`));
+    const newEntries: QueueEntry[] = [];
+    let oversizedSkipped = 0;
+
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) continue;
+      if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+        oversizedSkipped++;
+        continue;
+      }
+      const key = `${file.name}:${file.size}`;
+      if (existingKeys.has(key)) continue;
+      existingKeys.add(key);
+      newEntries.push({
+        file,
+        status: 'pending',
+        error: null,
+        thumbUrl: URL.createObjectURL(file),
+      });
+    }
+
+    if (newEntries.length > 0) {
+      this.queue.update((q) => [...q, ...newEntries]);
+      this.lastUploadedPhoto.set(null);
+      this.bulkSummary.set(null);
+    }
+
+    if (oversizedSkipped > 0) {
+      this.uploadError.set(
+        `${oversizedSkipped} file(s) skipped: over the ${MAX_UPLOAD_SIZE_BYTES / (1024 * 1024)} MB limit.`,
+      );
+    } else if (newEntries.length > 0) {
+      this.uploadError.set(null);
+    } else if (files.length > 0) {
+      this.uploadError.set('No new images found in the selection.');
+    }
+
+    this.syncSinglePreview();
+  }
+
+  private syncSinglePreview(): void {
+    this.localPreviewUrl.set(this.selectedThumbUrl());
+  }
+
+  private selectedThumbUrl(): string | null {
+    return this.queue().length === 1 ? this.queue()[0].thumbUrl : null;
+  }
+
+  removeQueueEntry(index: number): void {
+    if (this.uploading()) return;
+    this.queue.update((q) => {
+      const entry = q[index];
+      if (entry) URL.revokeObjectURL(entry.thumbUrl);
+      return q.filter((_, i) => i !== index);
+    });
+    this.syncSinglePreview();
+  }
+
+  clearQueue(): void {
+    if (this.uploading()) return;
+    this.queue().forEach((e) => URL.revokeObjectURL(e.thumbUrl));
+    this.queue.set([]);
+    this.localPreviewUrl.set(null);
+    this.bulkSummary.set(null);
+    this.uploadError.set(null);
   }
 
   clearSelectedFile(): void {
-    this.selectedFile.set(null);
-    this.localPreviewUrl.set(null);
+    this.clearQueue();
   }
 
   uploadPhoto(): void {
-    const file = this.selectedFile();
-    if (!file || this.photoForm.invalid || this.uploading()) return;
+    const entry = this.queue().length === 1 ? this.queue()[0] : null;
+    if (!entry || this.photoForm.invalid || this.uploading()) return;
 
     this.uploading.set(true);
     this.uploadError.set(null);
@@ -213,12 +344,12 @@ export class AdminCmsComponent implements OnInit {
       displayOrder: raw.displayOrder ?? 0,
     };
 
-    this.api.uploadPhoto(file, metadata).subscribe({
+    this.api.uploadPhoto(entry.file, metadata).subscribe({
       next: (response) => {
         this.uploading.set(false);
         this.lastUploadedPhoto.set(response);
         this.allPhotos.update((photos) => [response, ...photos]);
-        this.clearSelectedFile();
+        this.clearQueue();
         this.photoForm.reset({ timeOfDayOverride: 'NIGHT', featured: false, displayOrder: 0 });
       },
       error: (err) => {
@@ -234,6 +365,78 @@ export class AdminCmsComponent implements OnInit {
         }
       },
     });
+  }
+
+  async uploadBulk(): Promise<void> {
+    if (this.uploading() || this.photoForm.invalid) return;
+
+    this.uploading.set(true);
+    this.uploadError.set(null);
+    this.lastUploadedPhoto.set(null);
+    this.bulkSummary.set(null);
+
+    const raw = this.photoForm.getRawValue();
+    let nextOrder = raw.displayOrder ?? 0;
+    let uploadedCount = 0;
+    let failedCount = 0;
+    let lastResponse: PhotoResponse | null = null;
+    let authFailed = false;
+
+    const snapshot = this.queue();
+    for (let i = 0; i < snapshot.length; i++) {
+      const entry = snapshot[i];
+      if (entry.status !== 'pending' && entry.status !== 'failed') continue;
+
+      this.setQueueEntryStatus(i, 'uploading');
+      const metadata: PhotoUploadRequest = {
+        title: null,
+        caption: raw.caption?.trim() || null,
+        categoryId: raw.categoryId!,
+        eventAlbumId: raw.eventAlbumId || null,
+        timeOfDayOverride: raw.timeOfDayOverride as TimeOfDay,
+        featured: uploadedCount === 0 ? (raw.featured ?? false) : false,
+        displayOrder: nextOrder++,
+      };
+
+      try {
+        const response = await firstValueFrom(this.api.uploadPhoto(entry.file, metadata));
+        this.allPhotos.update((photos) => [response, ...photos]);
+        this.setQueueEntryStatus(i, 'done');
+        uploadedCount++;
+        lastResponse = response;
+      } catch (err: any) {
+        console.error('Bulk photo upload error:', err);
+        failedCount++;
+        if (err.status === 401 || err.status === 403) {
+          this.setQueueEntryStatus(i, 'failed', 'Authentication failed');
+          authFailed = true;
+          break;
+        }
+        this.setQueueEntryStatus(i, 'failed', this.problemDetail(err, 'Upload failed.'));
+      }
+    }
+
+    this.uploading.set(false);
+
+    if (authFailed) {
+      this.uploadError.set('Authentication failed. Please check your credentials in the top bar.');
+      return;
+    }
+
+    if (failedCount === 0 && uploadedCount > 0) {
+      this.lastUploadedPhoto.set(lastResponse);
+      this.clearQueue();
+      this.photoForm.reset({ timeOfDayOverride: 'NIGHT', featured: false, displayOrder: 0 });
+      this.bulkSummary.set(`${uploadedCount} photo(s) uploaded successfully.`);
+    } else if (uploadedCount > 0 || failedCount > 0) {
+      this.bulkSummary.set(`${uploadedCount} uploaded, ${failedCount} failed.`);
+    }
+  }
+
+  private setQueueEntryStatus(index: number, status: QueueItemStatus, error: string | null = null): void {
+    this.queue.update((q) =>
+      q.map((e, i) => (i === index ? { ...e, status, error } : e)),
+    );
   }
 
   confirmDeletePhoto(id: string): void {

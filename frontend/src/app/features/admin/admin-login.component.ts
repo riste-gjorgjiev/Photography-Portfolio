@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { PortfolioApiService } from '../../core/services/portfolio-api.service';
 import { UiIconComponent } from '../../shared/components/ui-icon/ui-icon.component';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin-login',
@@ -44,7 +45,7 @@ export class AdminLoginComponent implements OnInit {
         if (err.status === 401 || err.status === 403) {
           this.loginError.set('Invalid credentials. Please check your username and password.');
         } else if (err.status === 0) {
-          this.loginError.set('Cannot reach the backend. Is it running on localhost:8080?');
+          this.loginError.set(`Cannot reach the backend at ${environment.apiUrl}.`);
         } else {
           this.loginError.set('Connection failed. Please try again.');
         }
