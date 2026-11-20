@@ -4,9 +4,15 @@
   (click)="onClose()"
 >
   <div
-    class="lightbox-stage flex-1 min-h-0 flex items-center justify-center relative"
+    #stage
+    class="lightbox-stage flex-1 min-h-0 flex items-center justify-center relative overflow-hidden"
     [class.lightbox-stage-sheet-open]="sidebarOpen()"
     (click)="$event.stopPropagation()"
+    (wheel)="onWheel($event)"
+    (pointerdown)="onPanStart($event)"
+    (pointermove)="onPanMove($event)"
+    (pointerup)="onPanEnd($event)"
+    (pointercancel)="onPanEnd($event)"
   >
     <button
       (click)="onClose()"
@@ -27,6 +33,41 @@
     >
       <app-icon name="info" [size]="20" />
     </button>
+
+    <!-- Zoom controls: scroll or double-click to zoom, drag to pan -->
+    <div
+      class="absolute top-4 left-4 z-10 flex items-center gap-0.5 rounded-full
+             bg-white/10 backdrop-blur-sm p-1 text-white/80"
+    >
+      <button
+        (click)="zoomOut()"
+        [disabled]="zoom() <= 1"
+        class="w-8 h-8 flex items-center justify-center rounded-full
+               hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+        title="Zoom out (−)"
+        aria-label="Zoom out"
+      >
+        <app-icon name="minus" [size]="16" />
+      </button>
+      <button
+        (click)="resetZoom()"
+        class="h-8 min-w-[3.5rem] px-2 rounded-full font-mono text-[11px] tabular-nums
+               hover:bg-white/10 transition-colors"
+        title="Reset zoom (0)"
+      >
+        {{ zoomPercent() }}%
+      </button>
+      <button
+        (click)="zoomIn()"
+        [disabled]="zoom() >= maxZoom"
+        class="w-8 h-8 flex items-center justify-center rounded-full
+               hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+        title="Zoom in (+)"
+        aria-label="Zoom in"
+      >
+        <app-icon name="plus" [size]="16" />
+      </button>
+    </div>
 
     @if (hasPrev()) {
       <button
@@ -65,7 +106,14 @@
         <img
           [src]="p.imageUrl"
           [alt]="p.title || 'Portfolio photo'"
-          class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+          [style.transform]="imageTransform()"
+          [style.transition]="dragging() ? 'none' : 'transform 150ms ease-out'"
+          [class.cursor-zoom-in]="zoom() <= 1"
+          [class.cursor-grab]="zoom() > 1 && !dragging()"
+          [class.cursor-grabbing]="dragging()"
+          draggable="false"
+          (dblclick)="toggleZoom()"
+          class="max-w-full max-h-full object-contain rounded-lg shadow-2xl select-none"
         />
       } @else {
         <img
@@ -74,7 +122,14 @@
           [height]="p.height"
           sizes="100vw"
           [alt]="p.title || 'Portfolio photo'"
-          class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+          [style.transform]="imageTransform()"
+          [style.transition]="dragging() ? 'none' : 'transform 150ms ease-out'"
+          [class.cursor-zoom-in]="zoom() <= 1"
+          [class.cursor-grab]="zoom() > 1 && !dragging()"
+          [class.cursor-grabbing]="dragging()"
+          draggable="false"
+          (dblclick)="toggleZoom()"
+          class="max-w-full max-h-full object-contain rounded-lg shadow-2xl select-none"
         />
       }
     }
