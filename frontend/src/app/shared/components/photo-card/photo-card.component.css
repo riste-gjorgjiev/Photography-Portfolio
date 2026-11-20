@@ -3,6 +3,18 @@
   break-inside: avoid;
 }
 
+/*
+  Ultrawide / panorama photos span the whole row instead of being squeezed
+  into a single column.
+  - `column-span: all` breaks out of the CSS multi-column masonry.
+  - `grid-column: 1 / -1` covers the real grid used for small result sets.
+*/
+:host(.photo-card--ultrawide) {
+  column-span: all;
+  grid-column: 1 / -1;
+  break-inside: avoid;
+}
+
 .photo-card {
   break-inside: avoid;
 }

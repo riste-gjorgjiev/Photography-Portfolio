@@ -41,6 +41,7 @@
         [ngSrc]="photo().imageUrl"
         [width]="photo().width"
         [height]="photo().height"
+        [sizes]="imageSizes()"
         [alt]="photo().title || 'Portfolio photo'"
         class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
       />

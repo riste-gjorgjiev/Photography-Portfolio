@@ -28,6 +28,7 @@ import {UiIconComponent} from '../../shared/components/ui-icon/ui-icon.component
             [ngSrc]="album().coverPhotoUrl!"
             width="320"
             height="200"
+            sizes="(min-width: 640px) 320px, 288px"
             [alt]="album().title"
             class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             priority

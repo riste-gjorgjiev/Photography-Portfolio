@@ -37,3 +37,11 @@ body {
   transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
 }
 
+/* Vertical rhythm for the masonry is padding, not `space-y` margins.
+   Multi-column fragmentation truncates a margin at the top of a column, so a
+   card right after a full-width panorama lost its gap in columns 2 and 3 while
+   column 1 kept it. Padding lives inside the card box and survives the break. */
+.photo-masonry > app-photo-card {
+  padding-bottom: 1.5rem;
+}
+
