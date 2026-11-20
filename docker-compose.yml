@@ -24,6 +24,9 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: portfolio-backend
+    # Not part of the default `docker compose up` — opt in with
+    # `docker compose --profile full up -d --build`.
+    profiles: ["full"]
     restart: unless-stopped
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/photography_portfolio
@@ -48,6 +51,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: portfolio-frontend
+    profiles: ["full"]
     restart: unless-stopped
     ports:
       - "80:80"

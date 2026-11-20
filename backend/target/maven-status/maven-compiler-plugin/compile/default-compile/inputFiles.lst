@@ -1,5 +1,6 @@
 /home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/PhotographyBackendApplication.java
 /home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/config/CloudinaryConfig.java
+/home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/config/DevDataSeeder.java
 /home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/config/SecurityConfig.java
 /home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/controller/AdminPortfolioController.java
 /home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/controller/PublicPortfolioController.java

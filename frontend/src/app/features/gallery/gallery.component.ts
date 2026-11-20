@@ -66,14 +66,18 @@ export class GalleryComponent {
       result = result.filter((p) => p.categorySlug === categorySlug);
     }
     if (albumSlug) {
-      // Find the active album
       const activeAlbum = this.albums().find((a) => a.slug === albumSlug);
       if (activeAlbum) {
-        // Filter photos by album ID OR by category if album has no photos assigned
-        result = result.filter((p) => 
-          p.eventAlbumId === activeAlbum.id || 
-          (p.eventAlbumId === null && p.categorySlug === activeAlbum.categorySlug)
-        );
+        // Prefer the album's own photos so the admin-defined order is exact.
+        // Only fall back to unassigned category photos for empty albums.
+        const albumPhotos = result.filter((p) => p.eventAlbumId === activeAlbum.id);
+        result =
+          albumPhotos.length > 0
+            ? albumPhotos
+            : result.filter(
+                (p) =>
+                  p.eventAlbumId === null && p.categorySlug === activeAlbum.categorySlug,
+              );
       }
     }
     return result;

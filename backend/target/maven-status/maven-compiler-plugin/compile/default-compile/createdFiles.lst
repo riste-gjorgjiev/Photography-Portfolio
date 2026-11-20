@@ -13,6 +13,7 @@ com/portfolio/photography/service/BookingService.class
 com/portfolio/photography/exception/ExternalServiceException.class
 com/portfolio/photography/dto/UpdatePhotoRequest.class
 com/portfolio/photography/dto/UpdateEventAlbumRequest.class
+com/portfolio/photography/config/DevDataSeeder.class
 com/portfolio/photography/service/CloudinaryService.class
 com/portfolio/photography/config/CloudinaryConfig.class
 com/portfolio/photography/service/ImageOptimizationService$OptimizedImage.class

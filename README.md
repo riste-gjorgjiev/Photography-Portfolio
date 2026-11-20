@@ -188,6 +188,10 @@ The admin studio accepts drag-and-drop files and whole folders:
 docker compose up -d postgres
 ```
 
+`docker compose up -d` (no service name) also only starts PostgreSQL — the
+`backend` and `frontend` containers live behind the `full` profile so they do
+not occupy ports `8080`/`80` while you run the apps locally.
+
 PostgreSQL 16 runs on `localhost:5433`, mapped from container port `5432`.
 
 **Local credentials:**
@@ -215,6 +219,10 @@ mvn spring-boot:run
 
 The API runs on `http://localhost:8080`.
 
+> Add `-Dspring-boot.run.profiles=dev` to seed a demo album with six sample
+> photos into an **empty** database (uses picsum.photos URLs and is skipped
+> whenever any content already exists). `scripts/dev.sh` enables it for you.
+
 **Default admin credentials:** `admin` / `admin123`
 
 Without real Cloudinary credentials (`CLOUDINARY_CLOUD_NAME=demo`), uploads fall back to base64 data URIs so local development still works.
@@ -228,6 +236,19 @@ npm start
 ```
 
 The app runs on `http://localhost:4200` and calls `http://localhost:8080/api/v1`.
+
+### Or: start everything with one command
+
+```bash
+npm run dev        # or ./scripts/dev.sh
+```
+
+Starts PostgreSQL, then the backend and frontend together with live reload.
+`Ctrl+C` stops both. The script also fails fast with a helpful message if
+`:8080` or `:4200` is already taken.
+
+It sets `SPRING_PROFILES_ACTIVE=dev`, which seeds a demo album with six photos
+into an empty local database so the gallery is not blank on first run.
 
 ### 4. Access the Application
 
@@ -407,19 +428,42 @@ Add more origins with `CORS_ALLOWED_ORIGINS`. Credentials are enabled and prefli
 
 ### Optional — Self-Hosted Full Stack
 
-The included `docker-compose.yml` runs the complete stack locally or on a single server:
+The included `docker-compose.yml` can run the complete stack locally or on a single server. The backend and frontend containers are behind the `full` profile:
 
 ```bash
-docker compose up -d
+docker compose --profile full up -d --build
 ```
 
 - **PostgreSQL 16** — port `5433`
 - **Spring Boot** — port `8080`, multi-stage JRE Alpine image
 - **Angular + nginx** — port `80`, SPA fallback and `/api/` proxy to the backend
 
+The Docker frontend is built with the `docker` Angular configuration, so it calls
+`/api/v1` on its own origin and nginx proxies those requests to the backend
+container. Stop it before running the apps locally:
+
+```bash
+docker compose --profile full down
+```
+
 For the managed production setup above, only Cloudflare Pages, the Oracle API container, Neon, and Cloudinary are used.
 
-> The shipped production environment points the Angular app at `https://api.riste-gjorgjiev.dev/api/v1`. If you self-host the Docker frontend against a different API host, update `frontend/src/environments/environment.prod.ts` before building.
+> The shipped production environment (`environment.prod.ts`, used by Cloudflare Pages) points the Angular app at `https://api.riste-gjorgjiev.dev/api/v1`. The Docker image uses `environment.docker.ts` instead (`/api/v1`, same-origin via nginx).
+
+### Troubleshooting: "Port 8080 is already in use"
+
+`docker compose up -d` with no service name only starts PostgreSQL. If a backend container from an earlier `docker compose up --build` is still around, it is holding the port:
+
+```bash
+docker compose --profile full down   # removes backend + frontend containers
+docker compose up -d                 # PostgreSQL only
+```
+
+Check what is holding the port:
+
+```bash
+lsof -iTCP:8080 -sTCP:LISTEN   # or: ss -ltnp | grep :8080
+```
 
 ---
 

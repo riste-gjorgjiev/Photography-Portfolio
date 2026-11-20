@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, input, linkedSignal, output, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   CdkDragDrop,
@@ -51,15 +51,43 @@ export class AlbumEditDialogComponent implements OnInit {
   );
 
   /**
-   * Working copy of the album's photos that the drag-and-drop rearranges. It is
-   * seeded from {@link albumPhotos} and re-synced whenever the incoming photos
-   * change (e.g. a new upload adds a photo), without clobbering a pending drag.
+   * Authoritative local ordering, stored as photo ids. Keeping only ids means a
+   * parent update (e.g. a re-sorted `allPhotos`) refreshes the photo data
+   * without ever overwriting the order the admin just set.
    */
-  readonly orderedPhotos = linkedSignal(() => this.albumPhotos());
+  private readonly localOrderIds = signal<string[]>([]);
+
+  readonly orderedPhotos = computed<PhotoResponse[]>(() => {
+    const byId = new Map(this.albumPhotos().map((photo) => [photo.id, photo]));
+    return this.localOrderIds()
+      .map((id) => byId.get(id))
+      .filter((photo): photo is PhotoResponse => photo !== undefined);
+  });
+
+  /** Id of the tile currently being dragged, used to dim the rest of the grid. */
+  readonly draggingId = signal<string | null>(null);
 
   readonly ordering = signal(false);
   readonly orderError = signal<string | null>(null);
   readonly orderSaved = signal<string | null>(null);
+
+  constructor() {
+    // Reconcile the local order with the incoming photos only when the *set*
+    // changes (photo added/removed). An unchanged set keeps the local order, so
+    // a save or an unrelated parent refresh can never make tiles jump back.
+    effect(() => {
+      const incomingIds = this.albumPhotos().map((photo) => photo.id);
+      const current = this.localOrderIds();
+      const sameSet =
+        current.length === incomingIds.length &&
+        incomingIds.every((id) => current.includes(id));
+      if (sameSet) return;
+
+      const kept = current.filter((id) => incomingIds.includes(id));
+      const added = incomingIds.filter((id) => !kept.includes(id));
+      this.localOrderIds.set([...kept, ...added]);
+    });
+  }
 
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(100)]],
@@ -82,6 +110,7 @@ export class AlbumEditDialogComponent implements OnInit {
 
   ngOnInit(): void {
     const album = this.album();
+    this.localOrderIds.set(this.albumPhotos().map((photo) => photo.id));
     this.form.patchValue(
       {
         title: album.title,
@@ -138,45 +167,53 @@ export class AlbumEditDialogComponent implements OnInit {
     });
   }
 
-  onDrop(event: CdkDragDrop<PhotoResponse[]>): void {
-    if (this.ordering()) return;
-    if (event.previousIndex === event.currentIndex) return;
-
-    this.orderedPhotos.update((photos) => {
-      const reordered = [...photos];
-      moveItemInArray(reordered, event.previousIndex, event.currentIndex);
-      return reordered;
-    });
-    this.persistOrder();
+  onDragStarted(id: string): void {
+    this.draggingId.set(id);
   }
 
-  private persistOrder(): void {
+  onDragEnded(): void {
+    this.draggingId.set(null);
+  }
+
+  onDrop(event: CdkDragDrop<PhotoResponse[]>): void {
+    this.draggingId.set(null);
+    if (this.ordering() || event.previousIndex === event.currentIndex) return;
+
+    const previousIds = this.localOrderIds();
+    const nextIds = [...previousIds];
+    moveItemInArray(nextIds, event.previousIndex, event.currentIndex);
+    this.localOrderIds.set(nextIds);
+    this.persistOrder(previousIds);
+  }
+
+  private persistOrder(previousIds: string[]): void {
     const albumId = this.album().id;
-    const previous = this.albumPhotos();
-    const current = this.orderedPhotos();
+    const currentIds = this.localOrderIds();
 
     this.ordering.set(true);
     this.orderError.set(null);
     this.orderSaved.set(null);
 
-    this.api
-      .reorderAlbumPhotos(
-        albumId,
-        current.map((photo) => photo.id),
-      )
-      .subscribe({
-        next: (photos) => {
-          this.ordering.set(false);
-          this.orderSaved.set('Order saved.');
-          this.orderChanged.emit(photos);
-        },
-        error: (err) => {
-          this.ordering.set(false);
-          this.orderedPhotos.set(previous);
-          console.error('Album photo reorder error:', err);
-          this.orderError.set(problemDetail(err, 'Failed to save the new photo order.'));
-        },
-      });
+    this.api.reorderAlbumPhotos(albumId, currentIds).subscribe({
+      next: (photos) => {
+        this.ordering.set(false);
+        this.orderSaved.set('Order saved.');
+        // Trust the server's canonical result (sorted by displayOrder).
+        this.localOrderIds.set(photos.map((photo) => photo.id));
+        this.orderChanged.emit(photos);
+      },
+      error: (err) => {
+        this.ordering.set(false);
+        this.localOrderIds.set(previousIds);
+        console.error('Album photo reorder error:', err);
+        this.orderError.set(problemDetail(err, 'Failed to save the new photo order.'));
+      },
+    });
+  }
+
+  retryOrder(): void {
+    if (this.ordering()) return;
+    this.persistOrder(this.localOrderIds());
   }
 
   usePhotoAsCover(photo: PhotoResponse): void {
