@@ -723,6 +723,23 @@ export class AdminCmsComponent implements OnInit {
     this.albums.update((albums) => albums.map((a) => (a.id === updated.id ? updated : a)));
   }
 
+  /**
+   * Album photo reordering rewrites display_order server-side. Merge the
+   * returned photos back into the grid and re-sort to mirror the server order
+   * (displayOrder ASC, createdAt DESC) that the public gallery uses.
+   */
+  onAlbumPhotosReordered(updated: PhotoResponse[]): void {
+    const byId = new Map(updated.map((photo) => [photo.id, photo]));
+    this.allPhotos.update((photos) =>
+      photos
+        .map((photo) => byId.get(photo.id) ?? photo)
+        .sort(
+          (a, b) =>
+            a.displayOrder - b.displayOrder || b.createdAt.localeCompare(a.createdAt),
+        ),
+    );
+  }
+
   openCategoryEditor(category: CategoryResponse): void {
     this.categoryError.set(null);
     this.categorySuccess.set(null);

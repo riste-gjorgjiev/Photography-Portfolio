@@ -71,6 +71,13 @@ public class AdminPortfolioController {
         return ResponseEntity.ok(portfolioService.uploadAlbumCover(id, file));
     }
 
+    @PutMapping("/albums/{id}/photos/order")
+    public ResponseEntity<List<PhotoResponse>> reorderAlbumPhotos(
+            @PathVariable UUID id,
+            @Valid @RequestBody ReorderAlbumPhotosRequest request) {
+        return ResponseEntity.ok(portfolioService.reorderAlbumPhotos(id, request.photoIds()));
+    }
+
     @DeleteMapping("/photos/{id}")
     public ResponseEntity<Void> deletePhoto(@PathVariable UUID id) {
         portfolioService.deletePhoto(id);

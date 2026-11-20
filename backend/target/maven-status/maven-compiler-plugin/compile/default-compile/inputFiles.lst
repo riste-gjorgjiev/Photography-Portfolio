@@ -19,6 +19,7 @@
 /home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/dto/PhotoResponse.java
 /home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/dto/PhotoUploadRequest.java
 /home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/dto/PortfolioMapper.java
+/home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/dto/ReorderAlbumPhotosRequest.java
 /home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/dto/UpdateCategoryRequest.java
 /home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/dto/UpdateEventAlbumRequest.java
 /home/riste/IdeaProjects/photography-portfolio/backend/src/main/java/com/portfolio/photography/dto/UpdatePhotoRequest.java

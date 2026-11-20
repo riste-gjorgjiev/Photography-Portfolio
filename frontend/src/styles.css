@@ -17,3 +17,24 @@ body {
   transition: background-color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Angular CDK drag-and-drop (album photo ordering). The preview is appended to
+   <body>, so these styles must live in the global stylesheet. */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 0.375rem;
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.65);
+  opacity: 0.92;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.6;
+}
+
+.cdk-drag-animating {
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+

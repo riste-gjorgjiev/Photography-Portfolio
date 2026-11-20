@@ -117,6 +117,14 @@ export class PortfolioApiService {
     );
   }
 
+  reorderAlbumPhotos(albumId: string, photoIds: string[]): Observable<PhotoResponse[]> {
+    return this.http.put<PhotoResponse[]>(
+      `${this.baseUrl}/admin/albums/${encodeURIComponent(albumId)}/photos/order`,
+      { photoIds },
+      { headers: this.adminHeaders },
+    );
+  }
+
   deletePhoto(id: string): Observable<void> {
     return this.http.delete<void>(
       `${this.baseUrl}/admin/photos/${encodeURIComponent(id)}`,

@@ -13,13 +13,19 @@ import com.portfolio.photography.repository.PhotoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -320,6 +326,40 @@ public class PortfolioService {
         // save() returns a managed copy whose associations are lazy proxies; with
         // open-in-view disabled the response must be mapped from an explicit fetch.
         return mapper.toPhotoResponse(reloadPhoto(saved.getId()));
+    }
+
+    /**
+     * Rewrites {@code displayOrder} for every photo in an album so the stored
+     * order matches the supplied list. Reusing the global {@code display_order}
+     * column keeps the public gallery (which already sorts by it) in sync.
+     */
+    @Transactional
+    public List<PhotoResponse> reorderAlbumPhotos(UUID albumId, List<UUID> photoIds) {
+        eventAlbumRepository.findById(albumId)
+                .orElseThrow(() -> new ResourceNotFoundException("EventAlbum", "id", albumId));
+
+        List<UUID> distinct = photoIds.stream().distinct().toList();
+        if (distinct.size() != photoIds.size()) {
+            throw new IllegalArgumentException("Duplicate photo ids in reorder request");
+        }
+
+        List<Photo> albumPhotos = photoRepository.findByAlbumIdWithAssociations(albumId);
+        Set<UUID> albumPhotoIds = albumPhotos.stream().map(Photo::getId).collect(Collectors.toSet());
+        if (!albumPhotoIds.equals(new HashSet<>(distinct))) {
+            throw new IllegalArgumentException("Order must list every photo in the album exactly once");
+        }
+
+        Map<UUID, Photo> byId = albumPhotos.stream()
+                .collect(Collectors.toMap(Photo::getId, Function.identity()));
+        for (int i = 0; i < distinct.size(); i++) {
+            byId.get(distinct.get(i)).setDisplayOrder(i);
+        }
+        photoRepository.saveAll(albumPhotos);
+
+        return photoRepository.findByAlbumIdWithAssociations(albumId)
+                .stream()
+                .map(mapper::toPhotoResponse)
+                .toList();
     }
 
     public void deleteCategory(UUID id) {

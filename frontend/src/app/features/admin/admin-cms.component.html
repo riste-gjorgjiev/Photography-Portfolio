@@ -1083,6 +1083,7 @@
       [photos]="allPhotos()"
       (saved)="onAlbumSaved($event)"
       (coverChanged)="onAlbumCoverChanged($event)"
+      (orderChanged)="onAlbumPhotosReordered($event)"
       (cancelled)="closeAlbumEditor()"
     />
   }

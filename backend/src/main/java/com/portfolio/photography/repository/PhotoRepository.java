@@ -40,4 +40,13 @@ public interface PhotoRepository extends JpaRepository<Photo, UUID> {
             WHERE p.id = :id
             """)
     Optional<Photo> findByIdWithAssociations(@Param("id") UUID id);
+
+    @Query("""
+            SELECT p FROM Photo p
+            JOIN FETCH p.category
+            LEFT JOIN FETCH p.eventAlbum
+            WHERE p.eventAlbum.id = :albumId
+            ORDER BY p.displayOrder ASC, p.createdAt DESC
+            """)
+    List<Photo> findByAlbumIdWithAssociations(@Param("albumId") UUID albumId);
 }

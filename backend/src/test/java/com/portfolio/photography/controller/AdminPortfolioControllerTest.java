@@ -5,6 +5,8 @@ import com.portfolio.photography.domain.enums.TimeOfDay;
 import com.portfolio.photography.dto.CategoryResponse;
 import com.portfolio.photography.dto.CreateCategoryRequest;
 import com.portfolio.photography.dto.EventAlbumResponse;
+import com.portfolio.photography.dto.PhotoResponse;
+import com.portfolio.photography.dto.ReorderAlbumPhotosRequest;
 import com.portfolio.photography.dto.UpdateCategoryRequest;
 import com.portfolio.photography.dto.UpdateEventAlbumRequest;
 import com.portfolio.photography.exception.ConflictException;
@@ -22,6 +24,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -280,6 +283,44 @@ class AdminPortfolioControllerTest {
         mockMvc.perform(multipart("/api/v1/admin/albums/{id}/cover", id).file(file))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.coverPhotoUrl").value("data:image/jpeg;base64,abc"));
+    }
+
+    @Test
+    void reorderAlbumPhotos_withValidRequest_returnsOk() throws Exception {
+        UUID albumId = UUID.randomUUID();
+        UUID firstId = UUID.randomUUID();
+        UUID secondId = UUID.randomUUID();
+
+        PhotoResponse first = new PhotoResponse(
+                firstId, "First", null, "pub-1", "https://cdn.example.com/1.jpg",
+                1000, 800, null, TimeOfDay.NIGHT, UUID.randomUUID(), "Nightlife", "nightlife",
+                albumId, "Album", "#FF007F", "#7928CA", null, false, 0, null);
+        PhotoResponse second = new PhotoResponse(
+                secondId, "Second", null, "pub-2", "https://cdn.example.com/2.jpg",
+                1000, 800, null, TimeOfDay.NIGHT, UUID.randomUUID(), "Nightlife", "nightlife",
+                albumId, "Album", "#FF007F", "#7928CA", null, false, 1, null);
+
+        when(portfolioService.reorderAlbumPhotos(eq(albumId), any()))
+                .thenReturn(List.of(first, second));
+
+        mockMvc.perform(put("/api/v1/admin/albums/{id}/photos/order", albumId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new ReorderAlbumPhotosRequest(
+                                List.of(firstId, secondId)))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(firstId.toString()))
+                .andExpect(jsonPath("$[0].displayOrder").value(0))
+                .andExpect(jsonPath("$[1].displayOrder").value(1));
+    }
+
+    @Test
+    void reorderAlbumPhotos_withEmptyList_returnsBadRequest() throws Exception {
+        UUID albumId = UUID.randomUUID();
+
+        mockMvc.perform(put("/api/v1/admin/albums/{id}/photos/order", albumId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"photoIds\": []}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

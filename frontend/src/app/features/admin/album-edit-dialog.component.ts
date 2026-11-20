@@ -1,5 +1,10 @@
-import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  CdkDragDrop,
+  DragDropModule,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
 import { PortfolioApiService } from '../../core/services/portfolio-api.service';
 import {
   CategoryResponse,
@@ -16,7 +21,7 @@ const MAX_COVER_SIZE_BYTES = 25 * 1024 * 1024;
 @Component({
   selector: 'app-album-edit-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, ModalComponent, UiIconComponent],
+  imports: [ReactiveFormsModule, DragDropModule, ModalComponent, UiIconComponent],
   templateUrl: './album-edit-dialog.component.html',
 })
 export class AlbumEditDialogComponent implements OnInit {
@@ -29,6 +34,7 @@ export class AlbumEditDialogComponent implements OnInit {
 
   readonly saved = output<EventAlbumResponse>();
   readonly coverChanged = output<EventAlbumResponse>();
+  readonly orderChanged = output<PhotoResponse[]>();
   readonly cancelled = output<void>();
 
   readonly submitting = signal(false);
@@ -43,6 +49,17 @@ export class AlbumEditDialogComponent implements OnInit {
   readonly albumPhotos = computed(() =>
     this.photos().filter((photo) => photo.eventAlbumId === this.album().id),
   );
+
+  /**
+   * Working copy of the album's photos that the drag-and-drop rearranges. It is
+   * seeded from {@link albumPhotos} and re-synced whenever the incoming photos
+   * change (e.g. a new upload adds a photo), without clobbering a pending drag.
+   */
+  readonly orderedPhotos = linkedSignal(() => this.albumPhotos());
+
+  readonly ordering = signal(false);
+  readonly orderError = signal<string | null>(null);
+  readonly orderSaved = signal<string | null>(null);
 
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(100)]],
@@ -119,6 +136,47 @@ export class AlbumEditDialogComponent implements OnInit {
         this.coverError.set(problemDetail(err, 'Failed to upload the cover image.'));
       },
     });
+  }
+
+  onDrop(event: CdkDragDrop<PhotoResponse[]>): void {
+    if (this.ordering()) return;
+    if (event.previousIndex === event.currentIndex) return;
+
+    this.orderedPhotos.update((photos) => {
+      const reordered = [...photos];
+      moveItemInArray(reordered, event.previousIndex, event.currentIndex);
+      return reordered;
+    });
+    this.persistOrder();
+  }
+
+  private persistOrder(): void {
+    const albumId = this.album().id;
+    const previous = this.albumPhotos();
+    const current = this.orderedPhotos();
+
+    this.ordering.set(true);
+    this.orderError.set(null);
+    this.orderSaved.set(null);
+
+    this.api
+      .reorderAlbumPhotos(
+        albumId,
+        current.map((photo) => photo.id),
+      )
+      .subscribe({
+        next: (photos) => {
+          this.ordering.set(false);
+          this.orderSaved.set('Order saved.');
+          this.orderChanged.emit(photos);
+        },
+        error: (err) => {
+          this.ordering.set(false);
+          this.orderedPhotos.set(previous);
+          console.error('Album photo reorder error:', err);
+          this.orderError.set(problemDetail(err, 'Failed to save the new photo order.'));
+        },
+      });
   }
 
   usePhotoAsCover(photo: PhotoResponse): void {

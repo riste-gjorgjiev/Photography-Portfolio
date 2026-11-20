@@ -21,9 +21,22 @@ import { LightboxModalComponent } from '../../shared/components/lightbox-modal/l
 import { EventAlbumCardComponent } from '../gallery/event-album-card.component';
 import { UiIconComponent } from '../../shared/components/ui-icon/ui-icon.component';
 
+/**
+ * Last-resort hero used only if the local derivatives fail to load.
+ */
 const FALLBACK_HERO =
   'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=3200&q=85';
-const LOCAL_HERO = '/hero/panorama-8k.webp';
+
+/**
+ * Derived widths of the shipped hero panorama (3.83:1). The widest candidate
+ * covers the pan mode, where the image is 140% of the container width.
+ */
+const HERO_WIDTHS = [1440, 2560, 3840] as const;
+const HERO_FALLBACK_WIDTH = 3840;
+const HERO_HEIGHT_AT_FALLBACK_WIDTH = 1002;
+
+/** Matches the `w-[140%]` wrapper the hero image is rendered inside. */
+const HERO_SIZES = '(min-width: 1920px) 2688px, 140vw';
 
 const PAN_DAMPING = 0.04;
 const PAN_MAX_SHIFT = 26;
@@ -56,7 +69,17 @@ export class HomeComponent implements OnInit {
   readonly currentPanX = signal<number>(0.5);
   readonly heroMode = signal<HeroMode>('pan');
   readonly heroImgLoaded = signal(false);
-  readonly heroImgSrc = signal(FALLBACK_HERO);
+  readonly heroFailed = signal(false);
+
+  readonly heroSizes = HERO_SIZES;
+  readonly heroFallbackSrc = FALLBACK_HERO;
+  readonly heroFallbackWidth = HERO_FALLBACK_WIDTH;
+  readonly heroFallbackHeight = HERO_HEIGHT_AT_FALLBACK_WIDTH;
+
+  /** Builds the `srcset` for one shipped format, e.g. `avif` or `webp`. */
+  heroSrcset(format: 'avif' | 'webp'): string {
+    return HERO_WIDTHS.map((width) => `/hero/panorama-${width}.${format} ${width}w`).join(', ');
+  }
   readonly heroContainerRef = viewChild<ElementRef<HTMLElement>>('heroContainer');
 
   private targetPanX = 0.5;
@@ -122,18 +145,17 @@ export class HomeComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const probe = new Image();
-    probe.onload = () => {
-      this.heroImgSrc.set(LOCAL_HERO);
-      this.heroImgLoaded.set(true);
-    };
-    probe.onerror = () => {
-      this.heroImgSrc.set(FALLBACK_HERO);
-      this.heroImgLoaded.set(true);
-    };
-    probe.src = LOCAL_HERO;
-
     this.loadFeaturedData();
+  }
+
+
+  onHeroLoad(): void {
+    this.heroImgLoaded.set(true);
+  }
+
+  /** Every candidate failed — fall back to the remote image. */
+  onHeroError(): void {
+    this.heroFailed.set(true);
   }
 
 

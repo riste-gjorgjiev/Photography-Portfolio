@@ -5,3 +5,4 @@
 /home/riste/IdeaProjects/photography-portfolio/backend/src/test/java/com/portfolio/photography/service/CloudinaryServiceTest.java
 /home/riste/IdeaProjects/photography-portfolio/backend/src/test/java/com/portfolio/photography/service/ImageAnalysisServiceTest.java
 /home/riste/IdeaProjects/photography-portfolio/backend/src/test/java/com/portfolio/photography/service/ImageOptimizationServiceTest.java
+/home/riste/IdeaProjects/photography-portfolio/backend/src/test/java/com/portfolio/photography/service/PortfolioServiceTest.java

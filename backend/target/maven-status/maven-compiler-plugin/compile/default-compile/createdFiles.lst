@@ -8,6 +8,7 @@ com/portfolio/photography/exception/ConflictException.class
 com/portfolio/photography/exception/GlobalExceptionHandler.class
 com/portfolio/photography/service/ImageAnalysisService$AnalyzedImageMetadata.class
 com/portfolio/photography/exception/ResourceNotFoundException.class
+com/portfolio/photography/dto/ReorderAlbumPhotosRequest.class
 com/portfolio/photography/service/BookingService.class
 com/portfolio/photography/exception/ExternalServiceException.class
 com/portfolio/photography/dto/UpdatePhotoRequest.class
