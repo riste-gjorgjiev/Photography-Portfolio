@@ -1,0 +1,129 @@
+<app-modal
+  title="Edit Photo"
+  [subtitle]="(photo().width + ' × ' + photo().height + ' · ' + (photo().exif.cameraModel || 'No camera metadata'))"
+  (closed)="cancel()"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+    <div class="flex gap-4">
+      <img
+        [src]="photo().imageUrl"
+        [alt]="photo().title || 'Photo'"
+        class="w-24 h-24 rounded-lg object-cover border border-white/10 shrink-0"
+      />
+      <div class="flex-1 space-y-3">
+        <div>
+          <label class="block text-[10px] font-mono text-white/40 mb-1">Title</label>
+          <input
+            formControlName="title"
+            type="text"
+            class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+          />
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-white/40 mb-1">Caption</label>
+          <textarea
+            formControlName="caption"
+            rows="2"
+            class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors resize-y"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-[10px] font-mono text-white/40 mb-1">Category *</label>
+        <select
+          formControlName="categoryId"
+          class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 focus:border-purple-500/50 focus:outline-none transition-colors"
+        >
+          @for (cat of categories(); track cat.id) {
+            <option [ngValue]="cat.id">{{ cat.name }} ({{ cat.timeOfDay }})</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] font-mono text-white/40 mb-1">Event Album</label>
+        <select
+          formControlName="eventAlbumId"
+          class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 focus:border-purple-500/50 focus:outline-none transition-colors"
+        >
+          <option [ngValue]="null">None (standalone)</option>
+          @for (album of albums(); track album.id) {
+            <option [ngValue]="album.id">{{ album.title }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-[10px] font-mono text-white/40 mb-1.5">Time of Day *</label>
+        <div class="flex gap-2">
+          @for (tod of ['NIGHT', 'DAY']; track tod) {
+            <button
+              type="button"
+              (click)="form.controls.timeOfDay.setValue($any(tod))"
+              class="flex-1 px-3 py-1.5 rounded-lg text-xs font-mono border transition-colors"
+              [class]="form.controls.timeOfDay.value === tod
+                ? 'bg-white/15 border-white/30 text-white'
+                : 'bg-white/5 border-white/10 text-white/50 hover:text-white/70'"
+            >
+              {{ tod }}
+            </button>
+          }
+        </div>
+      </div>
+      <div class="flex items-end gap-4">
+        <label class="flex items-center gap-2 cursor-pointer pb-2">
+          <input
+            type="checkbox"
+            formControlName="featured"
+            class="w-4 h-4 rounded border-white/20 bg-white/5 text-purple-500"
+          />
+          <span class="text-xs font-mono text-white/60">Featured</span>
+        </label>
+        <div class="flex items-center gap-2 pb-1">
+          <label class="text-[10px] font-mono text-white/40">Order</label>
+          <input
+            formControlName="displayOrder"
+            type="number"
+            min="0"
+            class="w-16 px-2 py-1 rounded bg-white/5 border border-white/10 text-xs font-mono text-white/80 focus:border-purple-500/50 focus:outline-none transition-colors"
+          />
+        </div>
+      </div>
+    </div>
+
+    @if (error(); as err) {
+      <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">{{ err }}</div>
+    }
+
+    <div class="flex items-center justify-between gap-3 pt-2 border-t border-white/5">
+      <span class="text-[10px] font-mono text-white/25">{{ photo().cloudinaryPublicId }}</span>
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          (click)="cancel()"
+          class="px-4 py-2 rounded-lg text-xs font-mono text-white/50 hover:text-white/80 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          [disabled]="form.invalid || submitting()"
+          class="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-mono bg-gradient-to-r from-purple-600 to-blue-600 text-white transition-all duration-300"
+          [class]="form.invalid || submitting() ? 'opacity-40 cursor-not-allowed' : 'hover:shadow-lg hover:shadow-purple-500/20'"
+        >
+          @if (submitting()) {
+            <span class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            Saving...
+          } @else {
+            <app-icon name="save" [size]="14" />
+            Save Changes
+          }
+        </button>
+      </div>
+    </div>
+  </form>
+</app-modal>

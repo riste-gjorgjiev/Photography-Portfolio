@@ -37,6 +37,14 @@ public class CloudinaryService {
     }
 
     public UploadResult uploadPhoto(byte[] bytes, String contentType, String filename, String categorySlug) {
+        return uploadImage(bytes, contentType, filename, categorySlug);
+    }
+
+    /**
+     * Uploads an image into {@code portfolio/<folder>/}. Shared by photo uploads
+     * (folder = category slug) and album covers (folder = {@code covers/<album slug>}).
+     */
+    public UploadResult uploadImage(byte[] bytes, String contentType, String filename, String folder) {
         if ("demo".equalsIgnoreCase(cloudName)) {
             log.info("Cloudinary cloud-name is 'demo'; using local data-URI fallback for {}", filename);
             String mimeType = contentType != null ? contentType : "image/jpeg";
@@ -49,7 +57,7 @@ public class CloudinaryService {
             // uploadLarge() sends the file in chunked requests: Cloudinary's plain
             // upload() API rejects anything over 10 MB (and silently ignores chunk_size).
             // Each part must be a multiple of 5 MiB and larger than 5 MiB, hence 10 MiB.
-            String publicId = "portfolio/" + categorySlug + "/" + UUID.randomUUID();
+            String publicId = "portfolio/" + folder + "/" + UUID.randomUUID();
             @SuppressWarnings("unchecked")
             Map<String, Object> uploadResult = cloudinary.uploader().uploadLarge(
                     bytes,
@@ -65,7 +73,7 @@ public class CloudinaryService {
             return new UploadResult(resultPublicId, secureUrl);
         } catch (Exception e) {
             log.error("Cloudinary upload failed for {} (cloud-name: {}, folder: portfolio/{})",
-                    filename, cloudName, categorySlug, e);
+                    filename, cloudName, folder, e);
             throw new ExternalServiceException(
                     "Image storage upload failed: " + abbreviate(e.getMessage(), 300), e);
         }

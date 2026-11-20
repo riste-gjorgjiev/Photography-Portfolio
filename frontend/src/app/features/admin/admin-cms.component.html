@@ -414,6 +414,11 @@
           <h3 class="font-mono text-[10px] tracking-[0.3em] text-white/40 uppercase mb-3">
             Photo Management ({{ allPhotos().length }})
           </h3>
+          @if (photoEditNotice(); as msg) {
+            <div class="mb-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+              {{ msg }}
+            </div>
+          }
           <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
             @for (photo of allPhotos(); track photo.id) {
               <div class="relative group rounded-lg overflow-hidden border border-white/10">
@@ -423,6 +428,14 @@
                   class="w-full aspect-square object-cover"
                 />
                 <div class="absolute inset-0 bg-black/60 opacity-100 sm:bg-transparent sm:opacity-0 sm:group-hover:bg-black/60 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    (click)="openPhotoEditor(photo)"
+                    class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white/70 text-xs flex items-center justify-center transition-colors"
+                    title="Edit photo details"
+                  >
+                    <app-icon name="pencil" [size]="13" />
+                  </button>
                   <button
                     type="button"
                     (click)="previewPhotoAmbient(photo)"
@@ -656,6 +669,14 @@
                   <div class="w-4 h-4 rounded" [style.background]="album.dominantHex"></div>
                   <button
                     type="button"
+                    (click)="openAlbumEditor(album)"
+                    class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 text-white/70 flex items-center justify-center transition-colors"
+                    title="Edit album"
+                  >
+                    <app-icon name="pencil" [size]="13" />
+                  </button>
+                  <button
+                    type="button"
                     (click)="confirmDeleteAlbum(album.id)"
                     class="w-7 h-7 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 flex items-center justify-center transition-colors"
                     title="Delete album"
@@ -857,6 +878,14 @@
                   <div class="w-4 h-4 rounded" [style.background]="category.defaultAmbientHex"></div>
                   <button
                     type="button"
+                    (click)="openCategoryEditor(category)"
+                    class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 text-white/70 flex items-center justify-center transition-colors"
+                    title="Edit category"
+                  >
+                    <app-icon name="pencil" [size]="13" />
+                  </button>
+                  <button
+                    type="button"
                     (click)="confirmDeleteCategory(category.id)"
                     class="w-7 h-7 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 flex items-center justify-center transition-colors"
                     title="Delete category"
@@ -1042,5 +1071,37 @@
         }
       </div>
     </div>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- EDIT DIALOGS                                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  @if (editingAlbum(); as album) {
+    <app-album-edit-dialog
+      [album]="album"
+      [categories]="categories()"
+      [photos]="allPhotos()"
+      (saved)="onAlbumSaved($event)"
+      (coverChanged)="onAlbumCoverChanged($event)"
+      (cancelled)="closeAlbumEditor()"
+    />
+  }
+
+  @if (editingCategory(); as category) {
+    <app-category-edit-dialog
+      [category]="category"
+      (saved)="onCategorySaved($event)"
+      (cancelled)="closeCategoryEditor()"
+    />
+  }
+
+  @if (editingPhoto(); as photo) {
+    <app-photo-edit-dialog
+      [photo]="photo"
+      [categories]="categories()"
+      [albums]="albums()"
+      (saved)="onPhotoSaved($event)"
+      (cancelled)="closePhotoEditor()"
+    />
   }
 </section>

@@ -39,6 +39,7 @@ public class PortfolioMapper {
                 eventAlbum.getEventDate(),
                 eventAlbum.getDescription(),
                 eventAlbum.getCoverPhotoUrl(),
+                eventAlbum.getCoverPhotoPublicId(),
                 eventAlbum.getDominatHex(),
                 eventAlbum.isFeatured()
         );

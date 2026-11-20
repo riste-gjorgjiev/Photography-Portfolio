@@ -22,6 +22,10 @@ import {
   TimeOfDay,
 } from '../../core/models/portfolio.models';
 import { UiIconComponent } from '../../shared/components/ui-icon/ui-icon.component';
+import { CategoryEditDialogComponent } from './category-edit-dialog.component';
+import { AlbumEditDialogComponent } from './album-edit-dialog.component';
+import { PhotoEditDialogComponent } from './photo-edit-dialog.component';
+import { problemDetail } from '../../core/utils/problem-detail';
 
 type AdminTab = 'photos' | 'albums' | 'categories' | 'bookings';
 
@@ -41,7 +45,14 @@ let nextEntryId = 0;
 @Component({
   selector: 'app-admin-cms',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, UiIconComponent],
+  imports: [
+    ReactiveFormsModule,
+    DatePipe,
+    UiIconComponent,
+    CategoryEditDialogComponent,
+    AlbumEditDialogComponent,
+    PhotoEditDialogComponent,
+  ],
   templateUrl: './admin-cms.component.html',
   styleUrl: './admin-cms.component.css',
 })
@@ -81,11 +92,16 @@ export class AdminCmsComponent implements OnInit {
   readonly albumError = signal<string | null>(null);
   readonly albumSuccess = signal<string | null>(null);
   readonly deleteConfirmAlbumId = signal<string | null>(null);
+  readonly editingAlbum = signal<EventAlbumResponse | null>(null);
 
   readonly categorySubmitting = signal(false);
   readonly categoryError = signal<string | null>(null);
   readonly categorySuccess = signal<string | null>(null);
   readonly deleteConfirmCategoryId = signal<string | null>(null);
+  readonly editingCategory = signal<CategoryResponse | null>(null);
+
+  readonly editingPhoto = signal<PhotoResponse | null>(null);
+  readonly photoEditNotice = signal<string | null>(null);
 
   readonly bookingFilter = signal<BookingStatus | 'ALL'>('ALL');
 
@@ -442,7 +458,7 @@ export class AdminCmsComponent implements OnInit {
             authFailed = true;
             return;
           }
-          this.setQueueEntryStatus(qi, 'failed', this.problemDetail(err, 'Upload failed.'));
+          this.setQueueEntryStatus(qi, 'failed', problemDetail(err, 'Upload failed.'));
         }
       }
     };
@@ -575,7 +591,7 @@ export class AdminCmsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Album delete error:', err);
-        this.albumError.set(this.problemDetail(err, 'Failed to delete album.'));
+        this.albumError.set(problemDetail(err, 'Failed to delete album.'));
         this.deleteConfirmAlbumId.set(null);
       },
     });
@@ -617,7 +633,7 @@ export class AdminCmsComponent implements OnInit {
       error: (err) => {
         this.categorySubmitting.set(false);
         console.error('Category creation error:', err);
-        this.categoryError.set(this.problemDetail(err, 'Failed to create category.'));
+        this.categoryError.set(problemDetail(err, 'Failed to create category.'));
       },
     });
   }
@@ -642,7 +658,7 @@ export class AdminCmsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Category delete error:', err);
-        this.categoryError.set(this.problemDetail(err, 'Failed to delete category.'));
+        this.categoryError.set(problemDetail(err, 'Failed to delete category.'));
         this.deleteConfirmCategoryId.set(null);
       },
     });
@@ -671,6 +687,81 @@ export class AdminCmsComponent implements OnInit {
     this.router.navigate(['/admin']);
   }
 
+  //EDIT DIALOGS
+  openAlbumEditor(album: EventAlbumResponse): void {
+    this.albumError.set(null);
+    this.albumSuccess.set(null);
+    this.editingAlbum.set(album);
+  }
+
+  closeAlbumEditor(): void {
+    this.editingAlbum.set(null);
+  }
+
+  onAlbumSaved(updated: EventAlbumResponse): void {
+    const previous = this.editingAlbum();
+    this.albums.update((albums) => albums.map((a) => (a.id === updated.id ? updated : a)));
+
+    // Album titles are denormalised onto photo responses; keep the local grid in sync.
+    if (previous && previous.title !== updated.title) {
+      this.allPhotos.update((photos) =>
+        photos.map((p) =>
+          p.eventAlbumId === updated.id ? { ...p, eventAlbumTitle: updated.title } : p,
+        ),
+      );
+    }
+    // Category and time-of-day are derived server-side, so refetch when they change.
+    if (previous && previous.categoryId !== updated.categoryId) {
+      this.loadPhotos();
+    }
+
+    this.editingAlbum.set(null);
+    this.albumSuccess.set(`Album "${updated.title}" updated.`);
+  }
+
+  onAlbumCoverChanged(updated: EventAlbumResponse): void {
+    this.albums.update((albums) => albums.map((a) => (a.id === updated.id ? updated : a)));
+  }
+
+  openCategoryEditor(category: CategoryResponse): void {
+    this.categoryError.set(null);
+    this.categorySuccess.set(null);
+    this.editingCategory.set(category);
+  }
+
+  closeCategoryEditor(): void {
+    this.editingCategory.set(null);
+  }
+
+  onCategorySaved(updated: CategoryResponse): void {
+    this.categories.update((categories) =>
+      categories
+        .map((c) => (c.id === updated.id ? updated : c))
+        .sort((a, b) => a.timeOfDay.localeCompare(b.timeOfDay) || a.displayOrder - b.displayOrder),
+    );
+    this.editingCategory.set(null);
+    this.categorySuccess.set(`Category "${updated.name}" updated.`);
+
+    // Albums and photos embed category name/slug/time-of-day, so refresh them.
+    this.loadAlbums();
+    this.loadPhotos();
+  }
+
+  openPhotoEditor(photo: PhotoResponse): void {
+    this.photoEditNotice.set(null);
+    this.editingPhoto.set(photo);
+  }
+
+  closePhotoEditor(): void {
+    this.editingPhoto.set(null);
+  }
+
+  onPhotoSaved(updated: PhotoResponse): void {
+    this.allPhotos.update((photos) => photos.map((p) => (p.id === updated.id ? updated : p)));
+    this.editingPhoto.set(null);
+    this.photoEditNotice.set(`Photo "${updated.title || 'Untitled'}" updated.`);
+  }
+
   //HELPERS
   private loadCategories(): void {
     this.api.getCategories().subscribe((cats) => this.categories.set(cats));
@@ -694,14 +785,6 @@ export class AdminCmsComponent implements OnInit {
         }
       },
     });
-  }
-
-  private problemDetail(err: any, fallback: string): string {
-    if (err?.status === 401 || err?.status === 403) {
-      return 'Authentication failed. Please sign in again.';
-    }
-    const problem = err?.error;
-    return problem?.detail || problem?.title || fallback;
   }
 
   private slugify(text: string): string {

@@ -10,7 +10,9 @@ import java.util.UUID;
 
 public record CreateEventAlbumRequest(
         @NotBlank @Size(max = 100) String title,
-        @NotBlank @Size(max = 100) String slug,
+        @NotBlank @Size(max = 100)
+        @Pattern(regexp = "^[a-z0-9]+(?:-[a-z0-9]+)*$", message = "Must be a lowercase slug, e.g. subzero-warehouse-rave")
+        String slug,
         @NotNull UUID categoryId,
         @Size(max = 150) String venueName,
         @Size(max = 150) String location,

@@ -43,6 +43,34 @@ public class AdminPortfolioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(portfolioService.createCategory(request));
     }
 
+    @PutMapping("/albums/{id}")
+    public ResponseEntity<EventAlbumResponse> updateAlbum(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateEventAlbumRequest request) {
+        return ResponseEntity.ok(portfolioService.updateAlbum(id, request));
+    }
+
+    @PutMapping("/categories/{id}")
+    public ResponseEntity<CategoryResponse> updateCategory(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateCategoryRequest request) {
+        return ResponseEntity.ok(portfolioService.updateCategory(id, request));
+    }
+
+    @PutMapping("/photos/{id}")
+    public ResponseEntity<PhotoResponse> updatePhoto(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdatePhotoRequest request) {
+        return ResponseEntity.ok(portfolioService.updatePhoto(id, request));
+    }
+
+    @PostMapping(value = "/albums/{id}/cover", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<EventAlbumResponse> uploadAlbumCover(
+            @PathVariable UUID id,
+            @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(portfolioService.uploadAlbumCover(id, file));
+    }
+
     @DeleteMapping("/photos/{id}")
     public ResponseEntity<Void> deletePhoto(@PathVariable UUID id) {
         portfolioService.deletePhoto(id);

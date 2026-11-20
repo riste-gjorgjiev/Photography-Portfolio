@@ -5,7 +5,8 @@ import {
   CategoryResponse, CreateCategoryRequest, CreateEventAlbumRequest,
   EventAlbumResponse,
   PhotoResponse, PhotoUploadRequest,
-  TimeOfDay
+  TimeOfDay,
+  UpdateCategoryRequest, UpdateEventAlbumRequest, UpdatePhotoRequest,
 } from '../models/portfolio.models';
 import {Observable} from 'rxjs';
 import {AuthService} from './auth.service';
@@ -78,6 +79,40 @@ export class PortfolioApiService {
     return this.http.post<CategoryResponse>(
       `${this.baseUrl}/admin/categories`,
       request,
+      { headers: this.adminHeaders },
+    );
+  }
+
+  updateAlbum(id: string, request: UpdateEventAlbumRequest): Observable<EventAlbumResponse> {
+    return this.http.put<EventAlbumResponse>(
+      `${this.baseUrl}/admin/albums/${encodeURIComponent(id)}`,
+      request,
+      { headers: this.adminHeaders },
+    );
+  }
+
+  updateCategory(id: string, request: UpdateCategoryRequest): Observable<CategoryResponse> {
+    return this.http.put<CategoryResponse>(
+      `${this.baseUrl}/admin/categories/${encodeURIComponent(id)}`,
+      request,
+      { headers: this.adminHeaders },
+    );
+  }
+
+  updatePhoto(id: string, request: UpdatePhotoRequest): Observable<PhotoResponse> {
+    return this.http.put<PhotoResponse>(
+      `${this.baseUrl}/admin/photos/${encodeURIComponent(id)}`,
+      request,
+      { headers: this.adminHeaders },
+    );
+  }
+
+  uploadAlbumCover(id: string, file: File): Observable<EventAlbumResponse> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<EventAlbumResponse>(
+      `${this.baseUrl}/admin/albums/${encodeURIComponent(id)}/cover`,
+      formData,
       { headers: this.adminHeaders },
     );
   }

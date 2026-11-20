@@ -24,6 +24,7 @@ export interface EventAlbumResponse {
   eventDate: string | null;
   description: string | null;
   coverPhotoUrl: string | null;
+  coverPhotoPublicId: string | null;
   dominantHex: string;
   featured: boolean;
 }
@@ -119,6 +120,22 @@ export interface CreateCategoryRequest {
   description: string | null;
   timeOfDay: TimeOfDay;
   defaultAmbientHex: string | null;
+  displayOrder: number | null;
+}
+
+export interface UpdateEventAlbumRequest extends CreateEventAlbumRequest {
+  coverPhotoPublicId: string | null;
+}
+
+export type UpdateCategoryRequest = CreateCategoryRequest;
+
+export interface UpdatePhotoRequest {
+  title: string | null;
+  caption: string | null;
+  categoryId: string;
+  eventAlbumId: string | null;
+  timeOfDay: TimeOfDay;
+  featured: boolean;
   displayOrder: number | null;
 }
 

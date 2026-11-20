@@ -29,4 +29,13 @@ public interface EventAlbumRepositiry extends JpaRepository<EventAlbum, UUID> {
 
     @Query("SELECT a FROM EventAlbum a JOIN FETCH a.category WHERE a.slug = :slug")
     Optional<EventAlbum> findBySlugWithCategory(@Param("slug") String slug);
+
+    @Query("SELECT a FROM EventAlbum a JOIN FETCH a.category WHERE a.id = :id")
+    Optional<EventAlbum> findByIdWithCategory(@Param("id") UUID id);
+
+    boolean existsBySlug(String slug);
+
+    boolean existsBySlugAndIdNot(String slug, UUID id);
+
+    List<EventAlbum> findByCoverPhotoPublicId(String coverPhotoPublicId);
 }

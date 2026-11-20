@@ -1,0 +1,211 @@
+<app-modal
+  title="Edit Album"
+  subtitle="Album changes are public as soon as you save."
+  [wide]="true"
+  (closed)="cancel()"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" class="space-y-5">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-[10px] font-mono text-white/40 mb-1">Title *</label>
+        <input
+          formControlName="title"
+          type="text"
+          class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+        />
+      </div>
+      <div>
+        <label class="block text-[10px] font-mono text-white/40 mb-1">Slug *</label>
+        <input
+          formControlName="slug"
+          type="text"
+          class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-mono text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+        />
+        <p class="mt-1 text-[10px] font-mono text-white/25">Lowercase, hyphen-separated.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-[10px] font-mono text-white/40 mb-1">Category *</label>
+        <select
+          formControlName="categoryId"
+          class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 focus:border-purple-500/50 focus:outline-none transition-colors"
+        >
+          @for (cat of categories(); track cat.id) {
+            <option [ngValue]="cat.id">{{ cat.name }} ({{ cat.timeOfDay }})</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] font-mono text-white/40 mb-1">Event Date</label>
+        <input
+          formControlName="eventDate"
+          type="date"
+          class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 focus:border-purple-500/50 focus:outline-none transition-colors"
+        />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-[10px] font-mono text-white/40 mb-1">Venue Name</label>
+        <input
+          formControlName="venueName"
+          type="text"
+          class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+        />
+      </div>
+      <div>
+        <label class="block text-[10px] font-mono text-white/40 mb-1">Location</label>
+        <input
+          formControlName="location"
+          type="text"
+          class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-[10px] font-mono text-white/40 mb-1">Description</label>
+      <textarea
+        formControlName="description"
+        rows="2"
+        class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/90 placeholder:text-white/20 focus:border-purple-500/50 focus:outline-none transition-colors resize-y"
+      ></textarea>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 items-end">
+      <div>
+        <label class="block text-[10px] font-mono text-white/40 mb-1">Dominant Hex *</label>
+        <div class="flex items-center gap-2">
+          <input
+            type="color"
+            [value]="form.controls.dominantHex.value"
+            (input)="form.controls.dominantHex.setValue($any($event.target).value)"
+            class="w-10 h-10 rounded border border-white/10 cursor-pointer bg-transparent"
+          />
+          <input
+            formControlName="dominantHex"
+            type="text"
+            class="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-mono text-white/90 focus:border-purple-500/50 focus:outline-none transition-colors"
+          />
+        </div>
+      </div>
+      <label class="flex items-center gap-2 cursor-pointer pb-2">
+        <input
+          type="checkbox"
+          formControlName="featured"
+          class="w-4 h-4 rounded border-white/20 bg-white/5 text-purple-500"
+        />
+        <span class="text-xs font-mono text-white/60">Featured Album</span>
+      </label>
+    </div>
+
+    <!-- Cover image -->
+    <div class="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="text-[10px] font-mono tracking-[0.25em] text-white/40 uppercase">Cover Image</h3>
+        <div class="flex items-center gap-2">
+          <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 border border-white/10 text-[10px] font-mono text-white/60 cursor-pointer hover:bg-white/15 transition-colors">
+            @if (uploadingCover()) {
+              <span class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              Uploading...
+            } @else {
+              <app-icon name="image-plus" [size]="13" />
+              Upload cover
+            }
+            <input
+              type="file"
+              accept="image/*"
+              class="hidden"
+              [disabled]="uploadingCover()"
+              (change)="onCoverSelected($event)"
+            />
+          </label>
+          @if (coverUrl()) {
+            <button
+              type="button"
+              (click)="removeCover()"
+              class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-mono text-red-300 hover:bg-red-500/20 transition-colors"
+            >
+              <app-icon name="x" [size]="12" />
+              Remove
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (coverUrl(); as url) {
+        <img [src]="url" alt="Album cover" class="w-full max-h-56 object-cover rounded-lg border border-white/10" />
+      } @else {
+        <div class="w-full h-32 rounded-lg border border-dashed border-white/10 flex items-center justify-center">
+          <span class="text-[11px] font-mono text-white/25">No cover image</span>
+        </div>
+      }
+
+      @if (albumPhotos().length > 0) {
+        <div>
+          <div class="flex items-center gap-1.5 mb-2 text-white/30">
+            <app-icon name="images" [size]="12" />
+            <span class="text-[10px] font-mono">Or pick a photo from this album</span>
+          </div>
+          <div class="grid grid-cols-5 sm:grid-cols-8 gap-2 max-h-32 overflow-y-auto pr-1">
+            @for (photo of albumPhotos(); track photo.id) {
+              <button
+                type="button"
+                (click)="usePhotoAsCover(photo)"
+                class="relative aspect-square rounded-md overflow-hidden border transition-all"
+                [class]="coverPublicId() === photo.cloudinaryPublicId
+                  ? 'border-purple-400 ring-2 ring-purple-500/40'
+                  : 'border-white/10 hover:border-white/30'"
+                [title]="photo.title || 'Use as cover'"
+              >
+                <img [src]="photo.imageUrl" [alt]="photo.title || 'Album photo'" class="w-full h-full object-cover" />
+              </button>
+            }
+          </div>
+        </div>
+      } @else {
+        <p class="text-[10px] font-mono text-white/25">
+          No photos in this album yet — upload a cover image above.
+        </p>
+      }
+
+      @if (coverError(); as err) {
+        <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">{{ err }}</div>
+      }
+      @if (success(); as msg) {
+        <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">{{ msg }}</div>
+      }
+    </div>
+
+    @if (error(); as err) {
+      <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">{{ err }}</div>
+    }
+
+    <div class="flex items-center justify-end gap-3 pt-2 border-t border-white/5">
+      <button
+        type="button"
+        (click)="cancel()"
+        class="px-4 py-2 rounded-lg text-xs font-mono text-white/50 hover:text-white/80 transition-colors"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        [disabled]="form.invalid || submitting()"
+        class="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-mono bg-gradient-to-r from-purple-600 to-blue-600 text-white transition-all duration-300"
+        [class]="form.invalid || submitting() ? 'opacity-40 cursor-not-allowed' : 'hover:shadow-lg hover:shadow-purple-500/20'"
+      >
+        @if (submitting()) {
+          <span class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+          Saving...
+        } @else {
+          <app-icon name="save" [size]="14" />
+          Save Changes
+        }
+      </button>
+    </div>
+  </form>
+</app-modal>

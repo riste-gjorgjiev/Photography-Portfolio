@@ -18,6 +18,7 @@ public record EventAlbumResponse(
         LocalDate eventDate,
         String description,
         String coverPhotoUrl,
+        String coverPhotoPublicId,
         String dominantHex,
         boolean featured
 ) {

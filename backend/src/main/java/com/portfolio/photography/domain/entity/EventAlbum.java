@@ -44,6 +44,9 @@ public class EventAlbum {
     @Column(name = "cover_photo_url", columnDefinition = "TEXT")
     private String coverPhotoUrl;
 
+    @Column(name = "cover_photo_public_id", length = 255)
+    private String coverPhotoPublicId;
+
     @Column(name = "dominant_hex", nullable = false, length = 7)
     @Builder.Default
     private String dominatHex = "#6366F1";

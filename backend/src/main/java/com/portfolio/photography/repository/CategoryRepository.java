@@ -13,4 +13,5 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
     List<Category> findByTimeOfDayOrderByDisplayOrderAsc(TimeOfDay timeOfDay);
     Optional<Category> findBySlug(String slug);
     boolean existsBySlug(String slug);
+    boolean existsBySlugAndIdNot(String slug, UUID id);
 }
